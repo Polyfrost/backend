@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.server.extraEnv": {
+        "CHALK_OVERFLOW_DEPTH": "1000"
+    }
+}
