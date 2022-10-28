@@ -1,4 +1,10 @@
+#![feature(try_blocks)]
+
+mod parsing;
 mod structs;
+
+#[macro_use]
+mod utils;
 
 use actix_web::{get, web::Data, web::Path, App, HttpResponse, HttpServer, Responder};
 use const_format::formatcp;
@@ -7,7 +13,9 @@ use reqwest::{
     header::{self, HeaderValue},
     Client,
 };
+use roxmltree::Document as XMLDocument;
 use std::env;
+use parsing::MavenParser;
 
 const USER_AGENT: &str = formatcp!("PolyfrostAPI/{0}", env!("CARGO_PKG_VERSION"));
 
@@ -48,16 +56,26 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     };
     // Fetch maven data
     let client = &data.http_client;
-    let maven_releases = client
-        .get(format!(
-            "{0}/releases/cc/polyfrost/oneconfig-{version}-{loader}/maven-metadata.xml",
-            data.maven_url
-        ))
-        .send()
-        .await?
-        .text()
-        .await?;
-    println!("{}", maven_releases.unwrap().text().await.unwrap());
+    let maven_releases_text: Result<String, reqwest::Error> = try {
+        client
+            .get(format!(
+                "{0}/releases/cc/polyfrost/oneconfig-{version}-{loader}/maven-metadata.xml",
+                data.maven_url
+            ))
+            .send()
+            .await?
+            .text()
+            .await?
+    };
+    let maven_releases_text = check_internal_error!(maven_releases_text);
+
+    let maven_releases = XMLDocument::parse(&maven_releases_text);
+    let maven_releases = check_internal_error!(maven_releases);
+
+    let latest_release = maven_releases.root().get_latest();
+    let latest_release = check_internal_error!(latest_release, "Unable to parse latest release from maven");
+
+    println!("{}", latest_release);
     // Fetch the urls
     HttpResponse::Ok().body(format!("Version: {version}\nLoader: {loader}"))
 }
