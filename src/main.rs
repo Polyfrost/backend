@@ -24,12 +24,12 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     // Expand params
     let (version, loader) = path.into_inner();
     // Get the type of loader based on version and modloader
-    match loader.as_str() {
+    let loader_type = match loader.as_str() {
         // Handle fabric versions
         "fabric" => match version.as_str() {
             "1.16.2" => "prelaunch",
             _ => {
-                return HttpResponse::BadRequest().json(structs::ErrorResponse {
+                return HttpResponse::UnprocessableEntity().json(structs::ErrorResponse {
                     error: "INVALID_VERSION".to_string(),
                     message: format!("Version {version} is invalid for fabric loader!"),
                 })
@@ -40,7 +40,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
             "1.8.9" | "1.12.2" => "launchwrapper",
             "1.16.2" => "modlauncher",
             _ => {
-                return HttpResponse::BadRequest().json(structs::ErrorResponse {
+                return HttpResponse::UnprocessableEntity().json(structs::ErrorResponse {
                     error: "INVALID_VERSION".to_string(),
                     message: format!("Version {version} is invalid for forge loader!"),
                 })
@@ -48,13 +48,13 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
         },
         // Handle invalid versions
         _ => {
-            return HttpResponse::BadRequest().json(structs::ErrorResponse {
+            return HttpResponse::UnprocessableEntity().json(structs::ErrorResponse {
                 error: "INVALID_LOADER".to_string(),
                 message: format!("Loader {loader} is invalid!"),
             })
         }
     };
-    // Fetch maven data
+    // Fetch maven releases data
     let client = &data.http_client;
     let maven_releases_text: Result<String, reqwest::Error> = try {
         client
@@ -75,9 +75,35 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     let latest_release = maven_releases.root().get_latest();
     let latest_release = check_internal_error!(latest_release, "Unable to parse latest release from maven");
 
-    println!("{}", latest_release);
+    // Fetch loader maven data
+    let maven_loader_text: Result<String, reqwest::Error> = try {
+        client
+            .get(format!(
+                "{0}/releases/cc/polyfrost/oneconfig-loader-{loader_type}/maven-metadata.xml",
+                data.maven_url
+            ))
+            .send()
+            .await?
+            .text()
+            .await?
+    };
+    let maven_loader_text = check_internal_error!(maven_loader_text);
+
+    let maven_loader = XMLDocument::parse(&maven_loader_text);
+    let maven_loader = check_internal_error!(maven_loader);
+
+    let latest_loader = maven_loader.root().get_latest();
+    let latest_loader = check_internal_error!(latest_loader, "Unable to parse latest loader from maven");
+
     // Fetch the urls
-    HttpResponse::Ok().body(format!("Version: {version}\nLoader: {loader}"))
+    HttpResponse::Ok().body(
+        format!("
+            Version: {version}
+            Loader: {loader}
+            Latest release: {latest_release}
+            Latest loader: {latest_loader}
+        ")
+    )
 }
 
 #[actix_web::main]

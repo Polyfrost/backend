@@ -11,3 +11,16 @@ pub struct ErrorResponse {
     pub error: String,
     pub message: String,
 }
+
+#[derive(Serialize)]
+pub struct MavenDataResponse {
+    pub url: String,
+    pub sha256: String
+}
+
+#[derive(Serialize)]
+pub struct OneconfigDataResponse {
+    pub release: MavenDataResponse,
+    pub snapshot: MavenDataResponse,
+    pub loader: MavenDataResponse
+}
