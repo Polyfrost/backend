@@ -180,6 +180,8 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let port = env::var("PORT").unwrap_or("8080".to_string()).parse::<u16>().expect("Unable to convert PORT variable to number");
+    println!("Starting server on port {port}");
     HttpServer::new(|| {
         let mut default_headers = HeaderMap::new();
         default_headers.insert(header::USER_AGENT, HeaderValue::from_static(USER_AGENT));
@@ -203,7 +205,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(oneconfig)
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
