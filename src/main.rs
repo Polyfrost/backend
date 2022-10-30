@@ -19,6 +19,11 @@ use parsing::MavenParser;
 
 const USER_AGENT: &str = formatcp!("PolyfrostAPI/{0}", env!("CARGO_PKG_VERSION"));
 
+#[get("/")]
+async fn index() -> impl Responder {
+    HttpResponse::Ok().body("Hello there")
+}
+
 #[get("/oneconfig/{version}-{loader}")]
 async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) -> impl Responder {
     // Expand params
@@ -203,6 +208,7 @@ async fn main() -> std::io::Result<()> {
                         .expect("unable to build http client"),
                 }),
             )
+            .service(index)
             .service(oneconfig)
     })
     .bind(("0.0.0.0", port))?
