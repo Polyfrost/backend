@@ -32,7 +32,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     let loader_type = match loader.as_str() {
         // Handle fabric versions
         "fabric" => match version.as_str() {
-            // "1.16.2" => "prelaunch",
+            "1.8.9" | "1.12.2" => "prelaunch",
             _ => {
                 return HttpResponse::UnprocessableEntity().json(structs::ErrorResponse {
                     error: "INVALID_VERSION".to_string(),
@@ -43,7 +43,6 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
         // Handle forge versions
         "forge" => match version.as_str() {
             "1.8.9" | "1.12.2" => "launchwrapper",
-            // "1.16.2" => "modlauncher",
             _ => {
                 return HttpResponse::UnprocessableEntity().json(structs::ErrorResponse {
                     error: "INVALID_VERSION".to_string(),
