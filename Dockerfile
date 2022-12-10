@@ -2,6 +2,9 @@ FROM rustlang/rust:nightly-alpine as builder
 
 WORKDIR /usr/src/polyfrost-api
 
+# Use sparse registry because it is significantly faster and this already requires nightly
+ENV CARGO_UNSTABLE_SPARSE_REGISTRY=true
+
 # Install build tools
 RUN apk add --no-cache g++
 
