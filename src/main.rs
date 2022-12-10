@@ -78,7 +78,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
 
     let latest_release = maven_releases.root().get_latest();
     let (latest_release, latest_release_time) = check_internal_error!(latest_release, "Unable to parse latest release from maven");
-    dbg!(&latest_release, latest_release_time);
+
     // Fetch maven snapshots data
     let maven_snapshots_text: Result<String, reqwest::Error> = try {
         client
@@ -98,7 +98,6 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
 
     let latest_snapshot = maven_snapshots.root().get_latest();
     let (latest_snapshot, latest_snapshot_time) = check_internal_error!(latest_snapshot, "Unable to parse latest snapshot from maven");
-    dbg!(&latest_snapshot, latest_snapshot_time);
 
     // Fetch loader maven data
     let maven_loader_text: Result<String, reqwest::Error> = try {
