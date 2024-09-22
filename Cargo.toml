@@ -1,18 +1,16 @@
 [package]
-name = "polyfrost-api"
-description = "The Polyfrost backend"
+name = "backend"
 version = "1.0.0"
 edition = "2021"
-authors = ["Tyman"]
-license = "GPL-3.0-only"
-repository = "https://github.com/Polyfrost/backend"
-publish = false
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Ty <ty@myriation.xyz>"]
+license = "GPL-3.0-or-later"
 
 [dependencies]
-actix-web = "4"
-serde = { version = "1.0", features = ["derive"] }
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
-const_format = "0.2.30"
-roxmltree = "0.15.1"
+actix-web = "4.9.0"
+clap = { version = "4.5.18", features = ["derive", "env"] }
+quick-xml = "0.36.2"
+serde = "1.0.210"
+serde_json = "1.0.128"
+url = { version = "2.5.2", features = ["serde"] }
+utoipa = { version = "4.2.3", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "7.1.0", features = ["actix-web"] }
