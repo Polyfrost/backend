@@ -1,4 +1,8 @@
+#![feature(try_blocks, duration_constructors)]
+
 mod api;
+mod maven;
+mod types;
 
 use std::net::Ipv4Addr;
 

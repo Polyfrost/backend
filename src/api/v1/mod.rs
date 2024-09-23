@@ -1,13 +1,30 @@
 pub mod artifacts;
 
-use actix_web::{get, web::{self, ServiceConfig}, HttpResponse, Responder};
+use std::time::Duration;
+
+use actix_web::{
+    get,
+    web::{self, ServiceConfig},
+    HttpResponse, Responder,
+};
+use artifacts::OneConfigQuery;
+use moka::future::Cache;
 use utoipa::OpenApi;
+
+#[derive(Hash, PartialEq, Eq)]
+pub enum CacheKey {
+    OneConfigArtifacts(OneConfigQuery),
+}
 
 pub struct ApiData {
     /// The maven URL prefix to expose publicly, for example https://repo.polyfrost.org/
     pub public_maven_url: String,
     /// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8912/
     pub internal_maven_url: Option<String>,
+    /// A reqwest client to use to fetch maven data
+    pub client: reqwest::Client,
+    /// The internal cache used to cache artifact responses. The key is (Cache Type, Cache ID)
+    pub cache: Cache<CacheKey, String>,
 }
 
 #[derive(OpenApi)]
@@ -53,7 +70,27 @@ pub fn configure(data: &crate::AppCommand) -> impl FnOnce(&mut ServiceConfig) + 
             web::scope("/v1")
                 .app_data(web::Data::new(ApiData {
                     internal_maven_url: data.internal_maven_url.clone().map(|url| url.to_string()),
-                    public_maven_url: data.public_maven_url.to_string()
+                    public_maven_url: data.public_maven_url.to_string(),
+                    client: reqwest::ClientBuilder::new()
+                        .user_agent(concat!(
+                            env!("CARGO_PKG_NAME"),
+                            "/",
+                            env!("CARGO_PKG_VERSION"),
+                            " (",
+                            env!("CARGO_PKG_REPOSITORY"),
+                            ")"
+                        ))
+                        .build()
+                        .unwrap(),
+                    cache: Cache::builder()
+                        .weigher(|key, value| {
+                            (std::mem::size_of_val(key) + std::mem::size_of_val(value))
+                                .try_into()
+                                .unwrap_or(u32::MAX)
+                        })
+                        .max_capacity(const { 128 * 1024 * 1024 }) // 128 MiB
+                        .time_to_live(Duration::from_hours(5))
+                        .build(),
                 }))
                 .service(openapi_json)
                 .configure(artifacts::configure()),
