@@ -1,7 +1,5 @@
 pub mod artifacts;
 
-use std::time::Duration;
-
 use actix_web::{
     get,
     web::{self, ServiceConfig},
@@ -64,34 +62,10 @@ pub async fn openapi_json() -> impl Responder {
     HttpResponse::Ok().json(ApiDoc::openapi())
 }
 
-pub fn configure(data: &crate::AppCommand) -> impl FnOnce(&mut ServiceConfig) + '_ {
+pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
     move |config| {
         config.service(
             web::scope("/v1")
-                .app_data(web::Data::new(ApiData {
-                    internal_maven_url: data.internal_maven_url.clone().map(|url| url.to_string()),
-                    public_maven_url: data.public_maven_url.to_string(),
-                    client: reqwest::ClientBuilder::new()
-                        .user_agent(concat!(
-                            env!("CARGO_PKG_NAME"),
-                            "/",
-                            env!("CARGO_PKG_VERSION"),
-                            " (",
-                            env!("CARGO_PKG_REPOSITORY"),
-                            ")"
-                        ))
-                        .build()
-                        .unwrap(),
-                    cache: Cache::builder()
-                        .weigher(|key, value| {
-                            (std::mem::size_of_val(key) + std::mem::size_of_val(value))
-                                .try_into()
-                                .unwrap_or(u32::MAX)
-                        })
-                        .max_capacity(const { 128 * 1024 * 1024 }) // 128 MiB
-                        .time_to_live(Duration::from_hours(5))
-                        .build(),
-                }))
                 .service(openapi_json)
                 .configure(artifacts::configure()),
         );

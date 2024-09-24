@@ -1,5 +1,6 @@
 use actix_web::web;
 use anyhow::{anyhow, bail};
+use reqwest::Client;
 use semver::Version;
 
 use crate::{
@@ -11,15 +12,16 @@ use crate::{
 };
 
 #[inline]
-pub fn get_dep_url(state: &web::Data<ApiData>, repository: &str, dep: &Dependency) -> String {
+pub fn get_dep_url(url: &str, repository: &str, dep: &Dependency) -> String {
     let filename = match dep
         .third_party_compatibility
         .as_ref()
         .map(|i| &i.artifact_selector)
     {
         Some(Some(selector)) => format!(
-            "{name}-{classifier}.{extension}",
+            "{name}-{version}-{classifier}.{extension}",
             name = selector.name,
+            version = dep.version.requires,
             classifier = selector.classifier,
             extension = selector.extension
         ),
@@ -31,10 +33,6 @@ pub fn get_dep_url(state: &web::Data<ApiData>, repository: &str, dep: &Dependenc
     };
     format!(
         "{url}{repository}/{group}/{artifact}/{version}/{filename}",
-        url = state
-            .internal_maven_url
-            .clone()
-            .unwrap_or(state.public_maven_url.clone()),
         group = dep.group.replace('.', "/"),
         artifact = dep.module,
         version = dep.version.requires
@@ -115,5 +113,15 @@ pub async fn fetch_module_metadata(
         .await?
         .error_for_status()?
         .json()
+        .await?)
+}
+
+pub async fn fetch_checksum(client: Client, url: String) -> anyhow::Result<String> {
+    Ok(client
+        .get(format!("{url}.sha1"))
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
         .await?)
 }

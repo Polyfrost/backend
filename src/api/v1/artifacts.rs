@@ -6,6 +6,7 @@ use actix_web::{
     HttpResponse,
 };
 use serde::{Deserialize, Serialize};
+use tokio::task::JoinSet;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::{
@@ -83,7 +84,9 @@ pub struct ArtifactResponse {
 async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>) -> HttpResponse {
     let cache_key = CacheKey::OneConfigArtifacts(query.0.clone());
     if let Some(cached) = state.cache.get(&cache_key).await {
-        return HttpResponse::Ok().body(cached);
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(cached);
     }
 
     let mut artifacts = Vec::<ArtifactResponse>::new();
@@ -103,6 +106,28 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
     else {
         return HttpResponse::InternalServerError().body("uh");
     };
+
+    // Add oneconfig itself to the artifacts
+    let latest_oneconfig_url = format!(
+        "{url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
+        url = state
+            .internal_maven_url
+            .clone()
+            .unwrap_or(state.public_maven_url.clone()),
+        group = ONECONFIG_GROUP.replace('.', "/"),
+        artifact = format!("{}-{}", query.version, query.loader),
+        version = latest_oneconfig_version,
+    );
+    
+    let Ok(checksum) = maven::fetch_checksum(state.client.clone(), latest_oneconfig_url.clone()).await else {
+        return HttpResponse::InternalServerError().body("unable to fetch checksum for oneconfig");
+    };
+    artifacts.push(ArtifactResponse {
+        name: format!("{}-{}", query.version, query.loader),
+        group: ONECONFIG_GROUP.to_string(),
+        checksum,
+        url: latest_oneconfig_url,
+    });
 
     // Resolve all relevant dependency bundles of the proper oneconfig version
     let Ok(dependency) = maven::fetch_module_metadata(
@@ -124,7 +149,9 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
 
     let mut bundles = Vec::<GradleModuleMetadata>::with_capacity(4);
     for variant in dependency.variants {
-        let Variant::RuntimeElements { dependencies } = variant else { continue };
+        let Variant::RuntimeElements { dependencies } = variant else {
+            continue;
+        };
         for dep in dependencies {
             if !dep.group.starts_with(ONECONFIG_GROUP) {
                 continue;
@@ -151,23 +178,44 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
     }
 
     // Resolve all dependencies of all bundles and add to `artifacts` vec
-    for bundle in bundles {
-        for variant in bundle.variants {
-            let Variant::RuntimeElements { dependencies } = variant else { continue };
-            for dep in dependencies {
-                if dep.group.starts_with(POLYFROST_GROUP) { continue }
-                artifacts.push(ArtifactResponse {
-                    url: maven::get_dep_url(
-                        &state,
-                        repository,
-                        &dep
-                    ),
-                    name: dep.module,
-                    group: dep.group,
-                    checksum: String::from("TODO"),
-                })
-            }
-        }
+    let dependencies = bundles
+        .into_iter()
+        .flat_map(|b| b.variants)
+        .filter_map(|v| match v {
+            Variant::RuntimeElements { dependencies } => Some(dependencies),
+            _ => None,
+        })
+        .flatten()
+        .filter(|d| d.group.starts_with(POLYFROST_GROUP));
+
+    let mut set = JoinSet::new();
+    for dep in dependencies {
+        let url = maven::get_dep_url(
+            &state
+                .internal_maven_url
+                .clone()
+                .unwrap_or(state.public_maven_url.clone()),
+            "mirror",
+            &dep,
+        );
+        let client = state.client.clone();
+        set.spawn(async move { (dep, maven::fetch_checksum(client, url.clone()).await, url) });
+    }
+
+    for (dep, checksum, url) in set.join_all().await {
+        let Ok(checksum) = checksum else {
+            return HttpResponse::InternalServerError().body(format!(
+                "Unable to resolve checksum for dependent {}:{}:{}",
+                dep.group, dep.module, dep.version.requires
+            ));
+        };
+
+        artifacts.push(ArtifactResponse {
+            checksum,
+            name: dep.module,
+            group: dep.group,
+            url,
+        });
     }
 
     let Ok(response) = serde_json::to_string(&artifacts) else {

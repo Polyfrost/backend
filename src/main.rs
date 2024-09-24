@@ -1,13 +1,15 @@
-#![feature(try_blocks, duration_constructors)]
+#![feature(try_blocks, duration_constructors, async_closure)]
 
 mod api;
 mod maven;
 mod types;
 
-use std::net::Ipv4Addr;
+use std::{net::Ipv4Addr, time::Duration};
 
 use actix_web::{web, App, HttpServer};
+use api::v1::ApiData;
 use clap::Parser;
+use moka::future::Cache;
 use url::Url;
 use utoipa_swagger_ui::{Config, SwaggerUi};
 
@@ -24,14 +26,34 @@ struct AppCommand {
     pub public_maven_url: Url,
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     let args = AppCommand::parse();
     let listen_args = (args.host, args.port);
+    let data = web::Data::new(ApiData {
+        internal_maven_url: args.internal_maven_url.clone().map(|url| url.to_string()),
+        public_maven_url: args.public_maven_url.to_string(),
+        client: reqwest::ClientBuilder::new()
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION"),
+                " (",
+                env!("CARGO_PKG_REPOSITORY"),
+                ")"
+            ))
+            .build()
+            .unwrap(),
+        cache: Cache::builder()
+            .max_capacity(500)
+            .time_to_idle(Duration::from_hours(5))
+            .build(),
+    });
 
     HttpServer::new(move || {
         App::new()
-            .configure(api::v1::configure(&args))
+            .app_data(data.clone())
+            .configure(api::v1::configure())
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").config(
                 Config::new(["/v1/openapi.json"])
             ))
