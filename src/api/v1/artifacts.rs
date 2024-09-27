@@ -3,15 +3,18 @@ use std::fmt::Display;
 use actix_web::{
     get,
     web::{self, ServiceConfig},
-    HttpResponse,
+    HttpResponse, Responder,
 };
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 use utoipa::{IntoParams, ToSchema};
 
 use crate::{
-    api::v1::{ApiData, CacheKey},
-    maven,
+    api::v1::{
+        responses::{consts::*, ErrorResponse},
+        ApiData, CacheKey,
+    },
+    maven::{self, MavenError},
     types::gradle_module_metadata::{GradleModuleMetadata, Variant},
 };
 
@@ -81,7 +84,8 @@ pub struct ArtifactResponse {
     )
 )]
 #[get("/oneconfig")]
-async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>) -> HttpResponse {
+async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>) -> impl Responder {
+    // Check cache for a valid response, and if so skip everything else
     let cache_key = CacheKey::OneConfigArtifacts(query.0.clone());
     if let Some(cached) = state.cache.get(&cache_key).await {
         return HttpResponse::Ok()
@@ -95,16 +99,29 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
     } else {
         "releases"
     };
+    let oneconfig_variant = format!("{}-{}", query.version, query.loader);
 
-    let Ok(latest_oneconfig_version) = maven::fetch_latest_artifact(
+    let latest_oneconfig_version = match maven::fetch_latest_artifact(
         &state,
         repository,
         ONECONFIG_GROUP,
-        &format!("{}-{}", query.version, query.loader),
+        &oneconfig_variant,
     )
     .await
-    else {
-        return HttpResponse::InternalServerError().body("uh");
+    {
+        Ok(v) => v,
+        Err(MavenError::Reqwest(e)) if e.status().is_some_and(|c| c == 404) => {
+            return ErrorResponse::InvalidOneConfigVersion {
+                title: INVALID_ONECONFIG_VERSION_TITLE.to_string(),
+                detail: format!("The requested version {oneconfig_variant} could not be found in the requested {repository} repository"),
+                instance: format!("{INVALID_ONECONFIG_VERSION_INSTANCE_PREFIX}?version={version}&loader={loader}&repository={repository}",
+                    version = query.version,
+                    loader = query.loader
+                ),
+            }
+            .into()
+        }
+        Err(_) => unreachable!(), // TODO add Semver handling, and NoVersions
     };
 
     // Add oneconfig itself to the artifacts
@@ -118,8 +135,10 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
         artifact = format!("{}-{}", query.version, query.loader),
         version = latest_oneconfig_version,
     );
-    
-    let Ok(checksum) = maven::fetch_checksum(state.client.clone(), latest_oneconfig_url.clone()).await else {
+
+    let Ok(checksum) =
+        maven::fetch_checksum(state.client.clone(), latest_oneconfig_url.clone()).await
+    else {
         return HttpResponse::InternalServerError().body("unable to fetch checksum for oneconfig");
     };
     artifacts.push(ArtifactResponse {
@@ -218,6 +237,7 @@ async fn oneconfig(state: web::Data<ApiData>, query: web::Query<OneConfigQuery>)
         });
     }
 
+    // Convert artifacts to JSON and insert a copy into the cache
     let Ok(response) = serde_json::to_string(&artifacts) else {
         return HttpResponse::InternalServerError().body("huh");
     };

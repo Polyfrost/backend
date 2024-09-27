@@ -1,7 +1,7 @@
 use actix_web::web;
-use anyhow::{anyhow, bail};
 use reqwest::Client;
 use semver::Version;
+use thiserror::Error;
 
 use crate::{
     api::v1::ApiData,
@@ -10,6 +10,20 @@ use crate::{
         maven_metadata::MavenMetadata,
     },
 };
+
+#[derive(Error, Debug)]
+pub enum MavenError {
+    #[error("A response/request error from reqwest")]
+    Reqwest(#[from] reqwest::Error),
+    #[error("An error occurred while trying to parse an XML response")]
+    XmlParse(#[from] quick_xml::DeError),
+    #[error("An error occurred while trying to parse versions with SemVer")]
+    Semver(#[from] semver::Error),
+    #[error("There were no artifact versions in the maven-metadata.xml file")]
+    NoVersions,
+    #[error("There was a mismatch between the requested module ID or group and the response")]
+    ArtifactMismatch,
+}
 
 #[inline]
 pub fn get_dep_url(url: &str, repository: &str, dep: &Dependency) -> String {
@@ -44,7 +58,7 @@ pub async fn fetch_maven_metadata(
     repository: &str,
     group: &str,
     artifact: &str,
-) -> anyhow::Result<MavenMetadata> {
+) -> Result<MavenMetadata, MavenError> {
     let xml = state
         .client
         .get(format!(
@@ -63,11 +77,8 @@ pub async fn fetch_maven_metadata(
 
     let result: MavenMetadata = quick_xml::de::from_str(&xml)?;
 
-    if group != result.group_id {
-        bail!("Fetched group ID did not match parameters")
-    }
-    if artifact != result.artifact_id {
-        bail!("Fetched group ID did not match parameters")
+    if group != result.group_id || artifact != result.artifact_id {
+        return Err(MavenError::ArtifactMismatch);
     }
 
     Ok(result)
@@ -78,7 +89,7 @@ pub async fn fetch_latest_artifact(
     repository: &str,
     group: &str,
     artifact: &str,
-) -> anyhow::Result<Version> {
+) -> Result<Version, MavenError> {
     let metadata = fetch_maven_metadata(state, repository, group, artifact).await?;
     metadata
         .versioning
@@ -89,7 +100,7 @@ pub async fn fetch_latest_artifact(
         .collect::<Result<Vec<_>, semver::Error>>()?
         .into_iter()
         .max()
-        .ok_or(anyhow!("No maximum version found"))
+        .ok_or(MavenError::NoVersions)
 }
 
 pub async fn fetch_module_metadata(
@@ -98,7 +109,7 @@ pub async fn fetch_module_metadata(
     group: &str,
     artifact: &str,
     version: &str,
-) -> anyhow::Result<GradleModuleMetadata> {
+) -> Result<GradleModuleMetadata, MavenError> {
     Ok(state
         .client
         .get(format!(
@@ -116,7 +127,7 @@ pub async fn fetch_module_metadata(
         .await?)
 }
 
-pub async fn fetch_checksum(client: Client, url: String) -> anyhow::Result<String> {
+pub async fn fetch_checksum(client: Client, url: String) -> Result<String, MavenError> {
     Ok(client
         .get(format!("{url}.sha1"))
         .send()

@@ -1,4 +1,5 @@
 pub mod artifacts;
+pub mod responses;
 
 use actix_web::{
     get,
