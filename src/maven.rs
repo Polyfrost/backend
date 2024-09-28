@@ -129,7 +129,8 @@ pub async fn fetch_module_metadata(
 		.await?)
 }
 
-pub async fn fetch_checksum(client: Client, url: String) -> Result<String, MavenError> {
+#[inline]
+pub async fn fetch_checksum(client: &Client, url: &str) -> Result<String, MavenError> {
 	Ok(client
 		.get(format!("{url}.sha1"))
 		.send()

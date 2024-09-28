@@ -1,6 +1,8 @@
 pub mod artifacts;
 pub mod responses;
 
+use std::sync::Arc;
+
 use actix_web::{
 	get,
 	web::{self, ServiceConfig},
@@ -22,7 +24,7 @@ pub struct ApiData {
 	/// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8912/
 	pub internal_maven_url: Option<String>,
 	/// A reqwest client to use to fetch maven data
-	pub client: reqwest::Client,
+	pub client: Arc<reqwest::Client>,
 	/// The internal cache used to cache artifact responses. The key is (Cache
 	/// Type, Cache ID)
 	pub cache: Cache<CacheKey, String>

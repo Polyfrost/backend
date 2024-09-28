@@ -1,4 +1,4 @@
-#![feature(try_blocks, duration_constructors, async_closure)]
+#![feature(try_blocks, duration_constructors, iterator_try_collect)]
 
 mod api;
 mod maven;
@@ -43,7 +43,8 @@ async fn main() -> std::io::Result<()> {
 				")"
 			))
 			.build()
-			.unwrap(),
+			.unwrap()
+			.into(),
 		cache: Cache::builder()
 			.max_capacity(500)
 			.time_to_idle(Duration::from_hours(5))

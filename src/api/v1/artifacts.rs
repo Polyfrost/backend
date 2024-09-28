@@ -106,6 +106,10 @@ async fn oneconfig(
 		"releases"
 	};
 	let oneconfig_variant = format!("{}-{}", query.version, query.loader);
+	let maven_url = state
+		.internal_maven_url
+		.clone()
+		.unwrap_or(state.public_maven_url.clone());
 
 	let latest_oneconfig_version = match maven::fetch_latest_artifact(
 		&state,
@@ -136,18 +140,13 @@ async fn oneconfig(
 
 	// Add oneconfig itself to the artifacts
 	let latest_oneconfig_url = format!(
-		"{url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
-		url = state
-			.internal_maven_url
-			.clone()
-			.unwrap_or(state.public_maven_url.clone()),
+		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
 		group = ONECONFIG_GROUP.replace('.', "/"),
 		artifact = format!("{}-{}", query.version, query.loader),
 		version = latest_oneconfig_version,
 	);
 
-	let Ok(checksum) =
-		maven::fetch_checksum(state.client.clone(), latest_oneconfig_url.clone()).await
+	let Ok(checksum) = maven::fetch_checksum(&state.client, &latest_oneconfig_url).await
 	else {
 		return HttpResponse::InternalServerError()
 			.body("unable to fetch checksum for oneconfig");
@@ -207,47 +206,54 @@ async fn oneconfig(
 		}
 	}
 
-	// Resolve all dependencies of all bundles and add to `artifacts` vec
-	let dependencies = bundles
+	// Takes the bundles, resolves all their relevant dependencies, and concurrently
+	// resolves all checksums
+	let dependencies_result = bundles
 		.into_iter()
+		// Resolve all relevant dependencies of the bundles
 		.flat_map(|b| b.variants)
 		.filter_map(|v| match v {
 			Variant::RuntimeElements { dependencies } => Some(dependencies),
 			_ => None
 		})
 		.flatten()
-		.filter(|d| d.group.starts_with(POLYFROST_GROUP));
+		.filter(|d| d.group.starts_with(POLYFROST_GROUP))
+		// Concurrently resolve all checksums
+		.map(|dep| {
+			let dep_url = maven::get_dep_url(
+				&state
+					.internal_maven_url
+					.clone()
+					.unwrap_or(state.public_maven_url.clone()),
+				"mirror",
+				&dep
+			);
+			let client = state.client.clone();
+			async move { (dep, maven::fetch_checksum(&client, &dep_url).await, dep_url) }
+		})
+		.fold(JoinSet::new(), |mut acc, future| {
+			acc.spawn(future);
+			acc
+		})
+		.join_all()
+		.await
+		.into_iter()
+		.map(|(dep, checksum, dep_url)| {
+			Ok::<_, MavenError>(ArtifactResponse {
+				checksum: checksum?,
+				name: dep.module,
+				group: dep.group,
+				url: dep_url
+			})
+		})
+		.try_collect::<Vec<ArtifactResponse>>();
 
-	let mut set = JoinSet::new();
-	for dep in dependencies {
-		let url = maven::get_dep_url(
-			&state
-				.internal_maven_url
-				.clone()
-				.unwrap_or(state.public_maven_url.clone()),
-			"mirror",
-			&dep
-		);
-		let client = state.client.clone();
-		set.spawn(
-			async move { (dep, maven::fetch_checksum(client, url.clone()).await, url) }
-		);
-	}
-
-	for (dep, checksum, url) in set.join_all().await {
-		let Ok(checksum) = checksum else {
-			return HttpResponse::InternalServerError().body(format!(
-				"Unable to resolve checksum for dependent {}:{}:{}",
-				dep.group, dep.module, dep.version.requires
-			));
-		};
-
-		artifacts.push(ArtifactResponse {
-			checksum,
-			name: dep.module,
-			group: dep.group,
-			url
-		});
+	match dependencies_result {
+		Ok(mut deps) => artifacts.append(&mut deps),
+		Err(e) =>
+			return HttpResponse::InternalServerError()
+				.content_type("text/plain")
+				.body(format!("Error resolving dependency {e}")),
 	}
 
 	// Convert artifacts to JSON and insert a copy into the cache
