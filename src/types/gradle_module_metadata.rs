@@ -15,7 +15,7 @@ pub enum Variant {
 	Other
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct Dependency {
 	pub group: String,
@@ -24,20 +24,20 @@ pub struct Dependency {
 	pub third_party_compatibility: Option<ThirdPartyCompatibility>
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct ThirdPartyCompatibility {
 	pub artifact_selector: Option<ArtifactSelector>
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Hash)]
 pub struct ArtifactSelector {
 	pub name: String,
 	pub extension: String,
 	pub classifier: String
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq, Clone, Hash)]
 pub struct VersionRequirement {
 	pub requires: String
 }

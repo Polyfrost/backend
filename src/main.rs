@@ -1,4 +1,4 @@
-#![feature(try_blocks, duration_constructors, iterator_try_collect)]
+#![feature(duration_constructors)]
 
 mod api;
 mod maven;

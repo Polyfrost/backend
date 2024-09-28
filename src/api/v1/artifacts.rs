@@ -6,6 +6,7 @@ use actix_web::{
 	HttpResponse,
 	Responder
 };
+use itertools::Itertools as _;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
@@ -55,7 +56,7 @@ pub struct OneConfigQuery {
 	snapshots: bool
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ArtifactResponse {
 	group: String,
 	name: String,
@@ -195,6 +196,7 @@ async fn oneconfig(
 		})
 		.flatten()
 		.filter(|d| d.group.starts_with(POLYFROST_GROUP))
+		.unique()
 		// Concurrently resolve all checksums
 		.map(|dep| {
 			let dep_url = maven::get_dep_url(
@@ -223,7 +225,7 @@ async fn oneconfig(
 				url: dep_url
 			})
 		})
-		.try_collect::<Vec<ArtifactResponse>>();
+		.try_collect();
 
 	match dependencies_result {
 		Ok(mut deps) => artifacts.append(&mut deps),
