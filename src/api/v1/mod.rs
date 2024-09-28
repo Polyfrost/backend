@@ -2,9 +2,10 @@ pub mod artifacts;
 pub mod responses;
 
 use actix_web::{
-    get,
-    web::{self, ServiceConfig},
-    HttpResponse, Responder,
+	get,
+	web::{self, ServiceConfig},
+	HttpResponse,
+	Responder
 };
 use artifacts::OneConfigQuery;
 use moka::future::Cache;
@@ -12,18 +13,19 @@ use utoipa::OpenApi;
 
 #[derive(Hash, PartialEq, Eq)]
 pub enum CacheKey {
-    OneConfigArtifacts(OneConfigQuery),
+	OneConfigArtifacts(OneConfigQuery)
 }
 
 pub struct ApiData {
-    /// The maven URL prefix to expose publicly, for example https://repo.polyfrost.org/
-    pub public_maven_url: String,
-    /// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8912/
-    pub internal_maven_url: Option<String>,
-    /// A reqwest client to use to fetch maven data
-    pub client: reqwest::Client,
-    /// The internal cache used to cache artifact responses. The key is (Cache Type, Cache ID)
-    pub cache: Cache<CacheKey, String>,
+	/// The maven URL prefix to expose publicly, for example https://repo.polyfrost.org/
+	pub public_maven_url: String,
+	/// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8912/
+	pub internal_maven_url: Option<String>,
+	/// A reqwest client to use to fetch maven data
+	pub client: reqwest::Client,
+	/// The internal cache used to cache artifact responses. The key is (Cache
+	/// Type, Cache ID)
+	pub cache: Cache<CacheKey, String>
 }
 
 #[derive(OpenApi)]
@@ -60,15 +62,15 @@ struct ApiDoc;
 
 #[get("/openapi.json")]
 pub async fn openapi_json() -> impl Responder {
-    HttpResponse::Ok().json(ApiDoc::openapi())
+	HttpResponse::Ok().json(ApiDoc::openapi())
 }
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
-    move |config| {
-        config.service(
-            web::scope("/v1")
-                .service(openapi_json)
-                .configure(artifacts::configure()),
-        );
-    }
+	move |config| {
+		config.service(
+			web::scope("/v1")
+				.service(openapi_json)
+				.configure(artifacts::configure())
+		);
+	}
 }
