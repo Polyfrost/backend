@@ -8,7 +8,6 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
-use utoipa::{IntoParams, ToSchema};
 
 use crate::{
 	api::v1::{
@@ -29,7 +28,7 @@ pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	}
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum ModLoader {
 	Forge,
@@ -45,47 +44,25 @@ impl Display for ModLoader {
 	}
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct OneConfigQuery {
 	/// The minecraft version to fetch artifacts for
-	#[param(example = "1.8.9")]
 	version: String,
 	/// The mod loader to fetch artifacts for
-	#[param(example = "forge")]
 	loader: ModLoader,
 	/// Whether or not to use snapshots instead of official releases
-	#[param(example = "false")]
 	#[serde(default)]
 	snapshots: bool
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ArtifactResponse {
-	#[schema(example = "org.polyfrost.oneconfig")]
 	group: String,
-	#[schema(example = "1.8.9-forge")]
 	name: String,
-	#[schema(
-		example = "8a7240ae4a1327a4a8a5c5e3bf15292e2a9bcc7c267d8710e05e2f191cba1a53"
-	)]
 	checksum: String,
-	#[schema(
-		example = "https://repo.polyfrost.org/snapshots/org/polyfrost/oneconfig/1.8.9-forge/1.0.0-alpha.21/1.8.9-forge-1.0.0-alpha.21.jar"
-	)]
 	url: String // signatures: TODO
 }
 
-#[utoipa::path(
-    get,
-    context_path = "/artifacts",
-    params(
-        OneConfigQuery
-    ),
-    responses(
-        (status = 200, description = "Lists the necessary artifacts for a specific oneconfig download", body = [ArtifactResponse]),
-        (status = 500, description = "An error occurred while trying to resolve all artifacts for the requested OneConfig version", body = String)
-    )
-)]
 #[get("/oneconfig")]
 async fn oneconfig(
 	state: web::Data<ApiData>,

@@ -132,7 +132,7 @@ pub async fn fetch_module_metadata(
 #[inline]
 pub async fn fetch_checksum(client: &Client, url: &str) -> Result<String, MavenError> {
 	Ok(client
-		.get(format!("{url}.sha1"))
+		.get(format!("{url}.sha256"))
 		.send()
 		.await?
 		.error_for_status()?

@@ -11,7 +11,6 @@ use api::v1::ApiData;
 use clap::Parser;
 use moka::future::Cache;
 use url::Url;
-use utoipa_swagger_ui::{Config, SwaggerUi};
 
 #[derive(Parser, Clone)]
 #[clap(version, about, long_about = None)]
@@ -55,11 +54,6 @@ async fn main() -> std::io::Result<()> {
 		App::new()
 			.app_data(data.clone())
 			.configure(api::v1::configure())
-			.service(
-				SwaggerUi::new("/swagger-ui/{_:.*}")
-					.config(Config::new(["/v1/openapi.json"]))
-			)
-			.service(web::redirect("/", "/swagger-ui/"))
 	})
 	.bind(listen_args)?
 	.run()
