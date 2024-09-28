@@ -123,7 +123,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     let release_url = format!("{0}/releases/cc/polyfrost/oneconfig-{version}-{loader}/{latest_release}/oneconfig-{version}-{loader}-{latest_release}-full.jar", data.public_maven_url);
     let release_sha: Result<String, reqwest::Error> = try {
         client
-            .get(format!("{0}/releases/cc/polyfrost/oneconfig-{version}-{loader}/{latest_release}/oneconfig-{version}-{loader}-{latest_release}-full.jar", data.internal_maven_url))
+            .get(format!("{0}/releases/cc/polyfrost/oneconfig-{version}-{loader}/{latest_release}/oneconfig-{version}-{loader}-{latest_release}-full.jar.sha256", data.internal_maven_url))
             .send()
             .await?
             .text()
@@ -140,7 +140,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     let snapshot_url = format!("{0}/snapshots/cc/polyfrost/oneconfig-{version}-{loader}/{latest_snapshot}/oneconfig-{version}-{loader}-{latest_snapshot}-full.jar", data.public_maven_url);
     let snapshot_sha: Result<String, reqwest::Error> = try {
         client
-            .get(format!("{0}/snapshots/cc/polyfrost/oneconfig-{version}-{loader}/{latest_snapshot}/oneconfig-{version}-{loader}-{latest_snapshot}-full.jar", data.internal_maven_url))
+            .get(format!("{0}/snapshots/cc/polyfrost/oneconfig-{version}-{loader}/{latest_snapshot}/oneconfig-{version}-{loader}-{latest_snapshot}-full.jar.sha256", data.internal_maven_url))
             .send()
             .await?
             .text()
@@ -160,7 +160,7 @@ async fn oneconfig(data: Data<structs::AppState>, path: Path<(String, String)>) 
     let loader_url = format!("{0}/releases/cc/polyfrost/oneconfig-loader-{loader_type}/{latest_loader}/oneconfig-loader-{loader_type}-{latest_loader}.jar", data.public_maven_url);
     let loader_sha: Result<String, reqwest::Error> = try {
         client
-            .get(format!("{0}/releases/cc/polyfrost/oneconfig-loader-{loader_type}/{latest_loader}/oneconfig-loader-{loader_type}-{latest_loader}.jar", data.internal_maven_url))
+            .get(format!("{0}/releases/cc/polyfrost/oneconfig-loader-{loader_type}/{latest_loader}/oneconfig-loader-{loader_type}-{latest_loader}.jar.sha256", data.internal_maven_url))
             .send()
             .await?
             .text()
