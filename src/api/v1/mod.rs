@@ -15,7 +15,7 @@ pub enum CacheKey {
 pub struct ApiData {
 	/// The maven URL prefix to expose publicly, for example https://repo.polyfrost.org/
 	pub public_maven_url: String,
-	/// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8912/
+	/// The maven URL prefix to resolve artifacts internally, for example https://172.19.0.3:8080/
 	pub internal_maven_url: Option<String>,
 	/// A reqwest client to use to fetch maven data
 	pub client: Arc<reqwest::Client>,

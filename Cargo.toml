@@ -6,9 +6,10 @@ authors = ["Ty <ty@myriation.xyz>"]
 license = "GPL-3.0-or-later"
 
 [dependencies]
-actix-web = "4.9.0"
+actix-web = { version = "4.9.0", features = ["http2"] }
 anyhow = "1.0.89"
 clap = { version = "4.5.18", features = ["derive", "env"] }
+env_logger = "0.11.5"
 itertools = "0.13.0"
 moka = { version = "0.12.8", features = ["future"] }
 quick-xml = { version = "0.36.2", features = ["serde", "serialize"] }

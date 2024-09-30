@@ -187,45 +187,45 @@ async fn oneconfig(
 	// Takes the bundles, resolves all their relevant dependencies, and concurrently
 	// resolves all checksums
 	let dependencies_result = bundles
-		.into_iter()
-		// Resolve all relevant dependencies of the bundles
-		.flat_map(|b| b.variants)
-		.filter_map(|v| match v {
-			Variant::RuntimeElements { dependencies } => Some(dependencies),
-			_ => None
-		})
-		.flatten()
-		.filter(|d| d.group.starts_with(POLYFROST_GROUP))
-		.unique()
-		// Concurrently resolve all checksums
-		.map(|dep| {
-			let dep_url = maven::get_dep_url(
-				&state
-					.internal_maven_url
-					.clone()
-					.unwrap_or(state.public_maven_url.clone()),
-				"mirror",
-				&dep
-			);
-			let client = state.client.clone();
-			async move { (dep, maven::fetch_checksum(&client, &dep_url).await, dep_url) }
-		})
-		.fold(JoinSet::new(), |mut acc, future| {
-			acc.spawn(future);
-			acc
-		})
-		.join_all()
-		.await
-		.into_iter()
-		.map(|(dep, checksum, dep_url)| {
-			Ok::<_, MavenError>(ArtifactResponse {
-				checksum: checksum?,
-				name: dep.module,
-				group: dep.group,
-				url: dep_url
-			})
-		})
-		.try_collect();
+        .into_iter()
+        // Resolve all relevant dependencies of the bundles
+        .flat_map(|b| b.variants)
+        .filter_map(|v| match v {
+            Variant::RuntimeElements { dependencies } => Some(dependencies),
+            _ => None,
+        })
+        .flatten()
+        .filter(|d| d.group.starts_with(POLYFROST_GROUP))
+        .unique()
+        // Concurrently resolve all checksums
+        .map(|dep| {
+            let dep_url = maven::get_dep_url(
+                &state
+                    .internal_maven_url
+                    .clone()
+                    .unwrap_or(state.public_maven_url.clone()),
+                "mirror",
+                &dep,
+            );
+            let client = state.client.clone();
+            async move { (dep, maven::fetch_checksum(&client, &dep_url).await, dep_url) }
+        })
+        .fold(JoinSet::new(), |mut acc, future| {
+            acc.spawn(future);
+            acc
+        })
+        .join_all()
+        .await
+        .into_iter()
+        .map(|(dep, checksum, dep_url)| {
+            Ok::<_, MavenError>(ArtifactResponse {
+                checksum: checksum?,
+                name: dep.module,
+                group: dep.group,
+                url: dep_url,
+            })
+        })
+        .try_collect();
 
 	match dependencies_result {
 		Ok(mut deps) => artifacts.append(&mut deps),
