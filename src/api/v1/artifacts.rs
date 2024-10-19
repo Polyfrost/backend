@@ -12,7 +12,7 @@ use tokio::task::JoinSet;
 
 use crate::{
 	api::v1::{
-		responses::{consts::*, ErrorResponse},
+		responses::{consts::*, ArtifactResponse, Checksum, ChecksumType, ErrorResponse},
 		ApiData,
 		CacheKey
 	},
@@ -68,14 +68,6 @@ pub struct ArtifactQuery<V = ()> {
 	/// Extra version information
 	#[serde(flatten)]
 	version_info: V
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct ArtifactResponse {
-	group: String,
-	name: String,
-	checksum: String,
-	url: String // signatures: TODO
 }
 
 #[get("/oneconfig")]
@@ -155,7 +147,10 @@ async fn oneconfig(
 			query.version_info.version, query.version_info.loader
 		),
 		group: ONECONFIG_GROUP.to_string(),
-		checksum,
+		checksum: Checksum {
+			r#type: ChecksumType::Sha256,
+			hash: checksum
+		},
 		url: latest_oneconfig_url
 	});
 
@@ -248,7 +243,10 @@ async fn oneconfig(
         .into_iter()
         .map(|(dep, checksum, dep_url)| {
             Ok::<_, MavenError>(ArtifactResponse {
-                checksum: checksum?,
+                checksum: Checksum {
+					r#type: ChecksumType::Sha256,
+					hash: checksum?
+				},
                 name: dep.module,
                 group: dep.group,
                 url: dep_url,
@@ -343,7 +341,10 @@ async fn stage1(
 	let response = match serde_json::to_string(&ArtifactResponse {
 		name: "stage1".to_string(),
 		group: ONECONFIG_GROUP.to_string(),
-		checksum,
+		checksum: Checksum {
+			r#type: ChecksumType::Sha256,
+			hash: checksum
+		},
 		url: latest_stage1_url
 	}) {
 		Ok(response) => response,

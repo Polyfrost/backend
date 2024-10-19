@@ -8,6 +8,26 @@ pub mod consts {
 		"https://api.polyfrost.org/v1/problems/invalid-oneconfig-version/instance";
 }
 
+#[derive(Serialize, )]
+pub struct ArtifactResponse {
+	pub group: String,
+	pub name: String,
+	pub checksum: Checksum,
+	pub url: String // signatures: TODO
+}
+
+#[derive(Serialize)]
+pub struct Checksum {
+	pub r#type: ChecksumType,
+	pub hash: String
+}
+
+#[derive(Serialize)]
+pub enum ChecksumType {
+	#[serde(rename = "SHA-256")]
+	Sha256
+}
+
 /// An enum of error responses following RFC9457
 #[derive(Serialize)]
 #[serde(tag = "type")]
