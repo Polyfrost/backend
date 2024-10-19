@@ -17,7 +17,14 @@ use crate::{
 		CacheKey
 	},
 	maven::{self, MavenError},
-	types::gradle_module_metadata::{GradleModuleMetadata, Variant}
+	types::gradle_module_metadata::{
+		ArtifactSelector,
+		Dependency,
+		GradleModuleMetadata,
+		ThirdPartyCompatibility,
+		Variant,
+		VersionRequirement
+	}
 };
 
 const POLYFROST_GROUP: &str = "org.polyfrost";
@@ -25,7 +32,7 @@ const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	|config| {
-		config.service(web::scope("/artifacts").service(oneconfig));
+		config.service(web::scope("/artifacts").service(oneconfig).service(stage1));
 	}
 }
 
@@ -46,14 +53,21 @@ impl Display for ModLoader {
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
-pub struct OneConfigQuery {
+pub struct OneConfigVersionInfo {
 	/// The minecraft version to fetch artifacts for
 	version: String,
 	/// The mod loader to fetch artifacts for
-	loader: ModLoader,
+	loader: ModLoader
+}
+
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct ArtifactQuery<V = ()> {
 	/// Whether or not to use snapshots instead of official releases
 	#[serde(default)]
-	snapshots: bool
+	snapshots: bool,
+	/// Extra version information
+	#[serde(flatten)]
+	version_info: V
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -67,10 +81,10 @@ pub struct ArtifactResponse {
 #[get("/oneconfig")]
 async fn oneconfig(
 	state: web::Data<ApiData>,
-	query: web::Query<OneConfigQuery>
+	query: web::Query<ArtifactQuery<OneConfigVersionInfo>>
 ) -> impl Responder {
 	// Check cache for a valid response, and if so skip everything else
-	let cache_key = CacheKey::OneConfigArtifacts(query.0.clone());
+	let cache_key = CacheKey::ArtifactsOneConfig(query.0.clone());
 	if let Some(cached) = state.cache.get(&cache_key).await {
 		return HttpResponse::Ok()
 			.content_type("application/json")
@@ -83,7 +97,10 @@ async fn oneconfig(
 	} else {
 		"releases"
 	};
-	let oneconfig_variant = format!("{}-{}", query.version, query.loader);
+	let oneconfig_variant = format!(
+		"{}-{}",
+		query.version_info.version, query.version_info.loader
+	);
 	let maven_url = state
 		.internal_maven_url
 		.clone()
@@ -108,8 +125,8 @@ async fn oneconfig(
 				instance: format!(
 					"{INVALID_ONECONFIG_VERSION_INSTANCE_PREFIX}?version={version}&\
 					 loader={loader}&repository={repository}",
-					version = query.version,
-					loader = query.loader
+					version = query.version_info.version,
+					loader = query.version_info.loader
 				)
 			}
 			.into(),
@@ -120,7 +137,10 @@ async fn oneconfig(
 	let latest_oneconfig_url = format!(
 		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
 		group = ONECONFIG_GROUP.replace('.', "/"),
-		artifact = format!("{}-{}", query.version, query.loader),
+		artifact = format!(
+			"{}-{}",
+			query.version_info.version, query.version_info.loader
+		),
 		version = latest_oneconfig_version,
 	);
 
@@ -130,7 +150,10 @@ async fn oneconfig(
 			.body("unable to fetch checksum for oneconfig");
 	};
 	artifacts.push(ArtifactResponse {
-		name: format!("{}-{}", query.version, query.loader),
+		name: format!(
+			"{}-{}",
+			query.version_info.version, query.version_info.loader
+		),
 		group: ONECONFIG_GROUP.to_string(),
 		checksum,
 		url: latest_oneconfig_url
@@ -141,7 +164,10 @@ async fn oneconfig(
 		&state,
 		repository,
 		ONECONFIG_GROUP,
-		&format!("{}-{}", query.version, query.loader),
+		&format!(
+			"{}-{}",
+			query.version_info.version, query.version_info.loader
+		),
 		&latest_oneconfig_version.to_string()
 	)
 	.await
@@ -150,7 +176,10 @@ async fn oneconfig(
 			.content_type("text/plain")
 			.body(format!(
 				"Error fetching module metadata for {}:{}-{}:{}",
-				ONECONFIG_GROUP, query.version, query.loader, latest_oneconfig_version
+				ONECONFIG_GROUP,
+				query.version_info.version,
+				query.version_info.loader,
+				latest_oneconfig_version
 			));
 	};
 
@@ -204,7 +233,7 @@ async fn oneconfig(
                     .internal_maven_url
                     .clone()
                     .unwrap_or(state.public_maven_url.clone()),
-                "mirror",
+                repository,
                 &dep,
             );
             let client = state.client.clone();
@@ -240,6 +269,92 @@ async fn oneconfig(
 		return HttpResponse::InternalServerError().body("huh");
 	};
 	state.cache.insert(cache_key, response.clone()).await;
+	HttpResponse::Ok()
+		.content_type("application/json")
+		.body(response)
+}
+
+#[get("/stage1")]
+async fn stage1(
+	state: web::Data<ApiData>,
+	query: web::Query<ArtifactQuery>
+) -> impl Responder {
+	// Check cache for a valid response, and if so skip everything else
+	let cache_key = CacheKey::ArtifactsStage1(query.0.clone());
+	if let Some(cached) = state.cache.get(&cache_key).await {
+		return HttpResponse::Ok()
+			.content_type("application/json")
+			.body(cached);
+	}
+
+	// Fetch the latest stage1 version
+	let latest_stage1_version = match maven::fetch_latest_artifact(
+		&state,
+		if query.0.snapshots {
+			"snapshots"
+		} else {
+			"releases"
+		},
+		ONECONFIG_GROUP,
+		"stage1"
+	)
+	.await
+	{
+		Ok(latest) => latest,
+		Err(e) => {
+			return HttpResponse::InternalServerError()
+				.content_type("text/plain")
+				.body(format!("Error resolving latest stage1 version: {e}"));
+		}
+	};
+
+	// Resolve URL and checksum
+	let latest_stage1_url = maven::get_dep_url(
+		&state
+			.internal_maven_url
+			.clone()
+			.unwrap_or(state.public_maven_url.clone()),
+		"mirror",
+		&Dependency {
+			group: ONECONFIG_GROUP.to_string(),
+			module: "stage1".to_string(),
+			version: VersionRequirement {
+				requires: latest_stage1_version.to_string()
+			},
+			third_party_compatibility: Some(ThirdPartyCompatibility {
+				artifact_selector: Some(ArtifactSelector {
+					classifier: "all".to_string(),
+					extension: "jar".to_string(),
+					name: "stage1".to_string()
+				})
+			})
+		}
+	);
+	let checksum = match maven::fetch_checksum(&state.client, &latest_stage1_url).await {
+		Ok(checksum) => checksum,
+		Err(e) =>
+			return HttpResponse::InternalServerError()
+				.content_type("text/plain")
+				.body(format!(
+					"Error resolving latest stage1 version checksum: {e}"
+				)),
+	};
+
+	let response = match serde_json::to_string(&ArtifactResponse {
+		name: "stage1".to_string(),
+		group: ONECONFIG_GROUP.to_string(),
+		checksum,
+		url: latest_stage1_url
+	}) {
+		Ok(response) => response,
+		Err(e) => {
+			return HttpResponse::InternalServerError()
+				.content_type("text/plain")
+				.body(format!("Error constructing latest stage1 version: {e}"));
+		}
+	};
+	state.cache.insert(cache_key, response.clone()).await;
+
 	HttpResponse::Ok()
 		.content_type("application/json")
 		.body(response)

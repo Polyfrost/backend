@@ -4,12 +4,13 @@ pub mod responses;
 use std::sync::Arc;
 
 use actix_web::web::{self, ServiceConfig};
-use artifacts::OneConfigQuery;
+use artifacts::{ArtifactQuery, OneConfigVersionInfo};
 use moka::future::Cache;
 
 #[derive(Hash, PartialEq, Eq)]
 pub enum CacheKey {
-	OneConfigArtifacts(OneConfigQuery)
+	ArtifactsOneConfig(ArtifactQuery<OneConfigVersionInfo>),
+	ArtifactsStage1(ArtifactQuery)
 }
 
 pub struct ApiData {
@@ -19,8 +20,7 @@ pub struct ApiData {
 	pub internal_maven_url: Option<String>,
 	/// A reqwest client to use to fetch maven data
 	pub client: Arc<reqwest::Client>,
-	/// The internal cache used to cache artifact responses. The key is (Cache
-	/// Type, Cache ID)
+	/// The internal cache used to cache artifact responses. The key is (Path, QueryString)
 	pub cache: Cache<CacheKey, String>
 }
 
