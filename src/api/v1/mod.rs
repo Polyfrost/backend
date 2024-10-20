@@ -4,7 +4,10 @@ pub mod responses;
 
 use std::sync::Arc;
 
-use actix_web::web::{self, Bytes, ServiceConfig};
+use actix_web::{
+	http::header::HeaderMap,
+	web::{self, Bytes, ServiceConfig}
+};
 use middleware::etag_middleware;
 use moka::future::Cache;
 
@@ -19,6 +22,7 @@ pub type ETagType = [u8; 32];
 #[derive(Clone)]
 pub struct CacheValue {
 	pub response: Bytes,
+	pub headers: HeaderMap,
 	pub etag: ETagType
 }
 

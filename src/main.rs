@@ -67,7 +67,8 @@ async fn main() {
 			.weigher(|k: &CacheKey, v: &CacheValue| {
 				(k.path.len()
 					+ k.query.len() + const { std::mem::size_of::<ETagType>() }
-					+ v.response.len())
+					+ v.response.len()
+					+ std::mem::size_of_val(&v.headers))
 				.try_into()
 				.unwrap_or(u32::MAX)
 			})

@@ -49,25 +49,31 @@ pub async fn etag_middleware(
 		if let Some((if_none_match, etag)) = if_none_match
 			&& cache_value.etag == if_none_match
 		{
-			return Ok(service_request
-				.into_response(
-					HttpResponse::NotModified()
-						.append_header((ETAG, etag))
-						.body(())
-				)
-				.map_into_right_body());
+			let mut res = HttpResponse::NotModified()
+				.append_header((ETAG, etag))
+				.body(());
+
+			let headers = res.headers_mut();
+			for (name, value) in cache_value.headers {
+				headers.append(name, value);
+			}
+
+			return Ok(service_request.into_response(res).map_into_right_body());
 		}
 
-		return Ok(service_request
-			.into_response(
-				HttpResponse::Ok()
-					.append_header((
-						ETAG,
-						base16ct::lower::encode_string(cache_value.etag.as_ref())
-					))
-					.body(cache_value.response)
-			)
-			.map_into_right_body());
+		let mut res = HttpResponse::Ok()
+			.append_header((
+				ETAG,
+				base16ct::lower::encode_string(cache_value.etag.as_ref())
+			))
+			.body(cache_value.response);
+
+		let headers = res.headers_mut();
+		for (name, value) in cache_value.headers {
+			headers.append(name, value);
+		}
+
+		return Ok(service_request.into_response(res).map_into_right_body());
 	}
 
 	// If none of the caching cases were handled, pass through to other handlers
@@ -92,6 +98,7 @@ pub async fn etag_middleware(
 		cache
 			.insert(cache_key, CacheValue {
 				response: bytes.clone(),
+				headers: res.headers().to_owned(),
 				etag
 			})
 			.await;
