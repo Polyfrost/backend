@@ -1,4 +1,4 @@
-#![feature(duration_constructors)]
+#![feature(duration_constructors, let_chains)]
 
 mod api;
 mod maven;
@@ -7,7 +7,7 @@ mod types;
 use std::{net::Ipv4Addr, time::Duration};
 
 use actix_web::{web, App, HttpServer};
-use api::v1::ApiData;
+use api::v1::{ApiData, CacheKey, CacheValue, ETagType};
 use clap::Parser;
 use moka::future::Cache;
 use url::Url;
@@ -44,7 +44,7 @@ struct AppCommand {
 #[allow(clippy::needless_return)] // Clippy seems to be hallucinating a return statement at the end of main()
 async fn main() {
 	env_logger::init();
-	
+
 	let args = AppCommand::parse();
 	let listen_args = (args.host, args.port);
 	let data = web::Data::new(ApiData {
@@ -63,8 +63,15 @@ async fn main() {
 			.unwrap()
 			.into(),
 		cache: Cache::builder()
-			.max_capacity(500)
 			.time_to_idle(Duration::from_hours(5))
+			.weigher(|k: &CacheKey, v: &CacheValue| {
+				(k.path.len()
+					+ k.query.len() + const { std::mem::size_of::<ETagType>() }
+					+ v.response.len())
+				.try_into()
+				.unwrap_or(u32::MAX)
+			})
+			.max_capacity(/* 10 MiB */ const { 10 * 1024 * 1024 })
 			.build()
 	});
 

@@ -1,22 +1,25 @@
 pub mod artifacts;
+pub mod middleware;
 pub mod responses;
 
 use std::sync::Arc;
 
-use actix_web::web::{self, ServiceConfig};
-use artifacts::{ArtifactQuery, OneConfigVersionInfo};
+use actix_web::web::{self, Bytes, ServiceConfig};
+use middleware::etag_middleware;
 use moka::future::Cache;
 
-#[derive(Hash, PartialEq, Eq)]
-pub enum CacheKey {
-	ArtifactsOneConfig(ArtifactQuery<OneConfigVersionInfo>),
-	ArtifactsStage1(ArtifactQuery)
+#[derive(Hash, PartialEq, Eq, Clone)]
+pub struct CacheKey {
+	pub path: String,
+	pub query: String
 }
+
+pub type ETagType = [u8; 32];
 
 #[derive(Clone)]
 pub struct CacheValue {
-	pub response: String,
-	pub etag: String
+	pub response: Bytes,
+	pub etag: ETagType
 }
 
 pub struct ApiData {
@@ -32,6 +35,10 @@ pub struct ApiData {
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	move |config| {
-		config.service(web::scope("/v1").configure(artifacts::configure()));
+		config.service(
+			web::scope("/v1")
+				.wrap(actix_web::middleware::from_fn(etag_middleware))
+				.configure(artifacts::configure())
+		);
 	}
 }

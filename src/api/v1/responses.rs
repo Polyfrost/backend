@@ -8,7 +8,7 @@ pub mod consts {
 		"https://api.polyfrost.org/v1/problems/invalid-oneconfig-version/instance";
 }
 
-#[derive(Serialize, )]
+#[derive(Serialize)]
 pub struct ArtifactResponse {
 	pub group: String,
 	pub name: String,

@@ -8,15 +8,12 @@ use actix_web::{
 };
 use itertools::Itertools as _;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use tokio::task::JoinSet;
 
 use crate::{
 	api::v1::{
 		responses::{consts::*, ArtifactResponse, Checksum, ChecksumType, ErrorResponse},
-		ApiData,
-		CacheKey,
-		CacheValue
+		ApiData
 	},
 	maven::{self, MavenError},
 	types::gradle_module_metadata::{
@@ -77,15 +74,6 @@ async fn oneconfig(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery<OneConfigVersionInfo>>
 ) -> impl Responder {
-	// Check cache for a valid response, and if so skip everything else
-	let cache_key = CacheKey::ArtifactsOneConfig(query.0.clone());
-	if let Some(CacheValue { response, etag }) = state.cache.get(&cache_key).await {
-		return HttpResponse::Ok()
-			.content_type("application/json")
-			.append_header(("ETag", etag))
-			.body(response);
-	}
-
 	let mut artifacts = Vec::<ArtifactResponse>::new();
 	let repository = if query.snapshots {
 		"snapshots"
@@ -269,17 +257,9 @@ async fn oneconfig(
 	let Ok(response) = serde_json::to_string(&artifacts) else {
 		return HttpResponse::InternalServerError().body("huh");
 	};
-	let etag = base16ct::lower::encode_string(&Sha256::digest(&response));
-	state
-		.cache
-		.insert(cache_key, CacheValue {
-			response: response.clone(),
-			etag: etag.clone()
-		})
-		.await;
+
 	HttpResponse::Ok()
 		.content_type("application/json")
-		.append_header(("ETag", etag))
 		.body(response)
 }
 
@@ -288,15 +268,6 @@ async fn stage1(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery>
 ) -> impl Responder {
-	// Check cache for a valid response, and if so skip everything else
-	let cache_key = CacheKey::ArtifactsStage1(query.0.clone());
-	if let Some(CacheValue { response, etag }) = state.cache.get(&cache_key).await {
-		return HttpResponse::Ok()
-			.content_type("application/json")
-			.append_header(("ETag", etag))
-			.body(response);
-	}
-
 	// Fetch the latest stage1 version
 	let latest_stage1_version = match maven::fetch_latest_artifact(
 		&state,
@@ -366,17 +337,8 @@ async fn stage1(
 				.body(format!("Error constructing latest stage1 version: {e}"));
 		}
 	};
-	let etag = base16ct::lower::encode_string(&Sha256::digest(&response));
-	state
-		.cache
-		.insert(cache_key, CacheValue {
-			response: response.clone(),
-			etag: etag.clone()
-		})
-		.await;
 
 	HttpResponse::Ok()
 		.content_type("application/json")
-		.append_header(("ETag", etag))
 		.body(response)
 }
