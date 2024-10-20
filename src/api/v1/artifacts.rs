@@ -31,7 +31,11 @@ const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	|config| {
-		config.service(web::scope("/artifacts").service(oneconfig).service(platform_agnostic_artifacts));
+		config.service(
+			web::scope("/artifacts")
+				.service(oneconfig)
+				.service(platform_agnostic_artifacts)
+		);
 	}
 }
 
@@ -214,7 +218,7 @@ async fn oneconfig(
         .unique()
         // Concurrently resolve all checksums
         .map(|dep| {
-            let dep_url = maven::get_dep_url(
+            let internal_dep_url = maven::get_dep_url(
                 &state
                     .internal_maven_url
                     .clone()
@@ -222,8 +226,19 @@ async fn oneconfig(
                 repository,
                 &dep,
             );
+			let dep_url = maven::get_dep_url(
+                &state.public_maven_url,
+                repository,
+                &dep,
+            );
             let client = state.client.clone();
-            async move { (dep, maven::fetch_checksum(&client, &dep_url).await, dep_url) }
+            async move {
+				(
+					dep,
+					maven::fetch_checksum(&client, &internal_dep_url).await,
+					dep_url
+				)
+			}
         })
         .fold(JoinSet::new(), |mut acc, future| {
             acc.spawn(future);
@@ -270,14 +285,15 @@ async fn platform_agnostic_artifacts(
 	path: web::Path<(String,)>
 ) -> impl Responder {
 	let artifact = path.into_inner().0;
+	let repository = if query.snapshots {
+		"snapshots"
+	} else {
+		"releases"
+	};
 	// Fetch the latest artifact version
 	let latest_stage1_version = match maven::fetch_latest_artifact(
 		&state,
-		if query.0.snapshots {
-			"snapshots"
-		} else {
-			"releases"
-		},
+		repository,
 		ONECONFIG_GROUP,
 		&artifact
 	)
@@ -292,28 +308,34 @@ async fn platform_agnostic_artifacts(
 	};
 
 	// Resolve URL and checksum
-	let latest_artifact_url = maven::get_dep_url(
-		&state
-			.internal_maven_url
-			.clone()
-			.unwrap_or(state.public_maven_url.clone()),
-		"mirror",
-		&Dependency {
-			group: ONECONFIG_GROUP.to_string(),
-			module: artifact.clone(),
-			version: VersionRequirement {
-				requires: latest_stage1_version.to_string()
-			},
-			third_party_compatibility: Some(ThirdPartyCompatibility {
-				artifact_selector: Some(ArtifactSelector {
-					classifier: "all".to_string(),
-					extension: "jar".to_string(),
-					name: artifact.clone()
-				})
+	let dep = Dependency {
+		group: ONECONFIG_GROUP.to_string(),
+		module: artifact.clone(),
+		version: VersionRequirement {
+			requires: latest_stage1_version.to_string()
+		},
+		third_party_compatibility: Some(ThirdPartyCompatibility {
+			artifact_selector: Some(ArtifactSelector {
+				classifier: "all".to_string(),
+				extension: "jar".to_string(),
+				name: artifact.clone()
 			})
-		}
-	);
-	let checksum = match maven::fetch_checksum(&state.client, &latest_artifact_url).await {
+		})
+	};
+
+	let checksum = match maven::fetch_checksum(
+		&state.client,
+		&maven::get_dep_url(
+			&state
+				.internal_maven_url
+				.clone()
+				.unwrap_or(state.public_maven_url.clone()),
+			repository,
+			&dep
+		)
+	)
+	.await
+	{
 		Ok(checksum) => checksum,
 		Err(e) =>
 			return HttpResponse::InternalServerError()
@@ -330,7 +352,7 @@ async fn platform_agnostic_artifacts(
 			r#type: ChecksumType::Sha256,
 			hash: checksum
 		},
-		url: latest_artifact_url
+		url: maven::get_dep_url(&state.public_maven_url, repository, &dep)
 	}) {
 		Ok(response) => response,
 		Err(e) => {
