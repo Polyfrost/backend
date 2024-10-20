@@ -31,7 +31,7 @@ const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	|config| {
-		config.service(web::scope("/artifacts").service(oneconfig).service(stage1));
+		config.service(web::scope("/artifacts").service(oneconfig).service(platform_agnostic_artifacts));
 	}
 }
 
@@ -263,12 +263,14 @@ async fn oneconfig(
 		.body(response)
 }
 
-#[get("/stage1")]
-async fn stage1(
+#[get("/{artifact:stage1|relaunch}")]
+async fn platform_agnostic_artifacts(
 	state: web::Data<ApiData>,
-	query: web::Query<ArtifactQuery>
+	query: web::Query<ArtifactQuery>,
+	path: web::Path<(String,)>
 ) -> impl Responder {
-	// Fetch the latest stage1 version
+	let artifact = path.into_inner().0;
+	// Fetch the latest artifact version
 	let latest_stage1_version = match maven::fetch_latest_artifact(
 		&state,
 		if query.0.snapshots {
@@ -277,7 +279,7 @@ async fn stage1(
 			"releases"
 		},
 		ONECONFIG_GROUP,
-		"stage1"
+		&artifact
 	)
 	.await
 	{
@@ -285,12 +287,12 @@ async fn stage1(
 		Err(e) => {
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
-				.body(format!("Error resolving latest stage1 version: {e}"));
+				.body(format!("Error resolving latest {artifact} version: {e}"));
 		}
 	};
 
 	// Resolve URL and checksum
-	let latest_stage1_url = maven::get_dep_url(
+	let latest_artifact_url = maven::get_dep_url(
 		&state
 			.internal_maven_url
 			.clone()
@@ -298,7 +300,7 @@ async fn stage1(
 		"mirror",
 		&Dependency {
 			group: ONECONFIG_GROUP.to_string(),
-			module: "stage1".to_string(),
+			module: artifact.clone(),
 			version: VersionRequirement {
 				requires: latest_stage1_version.to_string()
 			},
@@ -306,35 +308,35 @@ async fn stage1(
 				artifact_selector: Some(ArtifactSelector {
 					classifier: "all".to_string(),
 					extension: "jar".to_string(),
-					name: "stage1".to_string()
+					name: artifact.clone()
 				})
 			})
 		}
 	);
-	let checksum = match maven::fetch_checksum(&state.client, &latest_stage1_url).await {
+	let checksum = match maven::fetch_checksum(&state.client, &latest_artifact_url).await {
 		Ok(checksum) => checksum,
 		Err(e) =>
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
 				.body(format!(
-					"Error resolving latest stage1 version checksum: {e}"
+					"Error resolving latest {artifact} version checksum: {e}"
 				)),
 	};
 
 	let response = match serde_json::to_string(&ArtifactResponse {
-		name: "stage1".to_string(),
+		name: artifact.clone(),
 		group: ONECONFIG_GROUP.to_string(),
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
 			hash: checksum
 		},
-		url: latest_stage1_url
+		url: latest_artifact_url
 	}) {
 		Ok(response) => response,
 		Err(e) => {
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
-				.body(format!("Error constructing latest stage1 version: {e}"));
+				.body(format!("Error constructing latest {artifact} version: {e}"));
 		}
 	};
 
