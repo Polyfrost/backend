@@ -88,10 +88,6 @@ async fn oneconfig(
 		"{}-{}",
 		query.version_info.version, query.version_info.loader
 	);
-	let maven_url = state
-		.internal_maven_url
-		.clone()
-		.unwrap_or(state.public_maven_url.clone());
 
 	let latest_oneconfig_version = match maven::fetch_latest_artifact(
 		&state,
@@ -123,6 +119,7 @@ async fn oneconfig(
 	// Add oneconfig itself to the artifacts
 	let latest_oneconfig_url = format!(
 		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
+		maven_url = state.public_maven_url,
 		group = ONECONFIG_GROUP.replace('.', "/"),
 		artifact = format!(
 			"{}-{}",
