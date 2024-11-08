@@ -249,7 +249,7 @@ async fn oneconfig(
             Ok::<_, MavenError>(ArtifactResponse {
                 name: dep.module.clone(),
                 group: dep.group,
-				jij: dep.module.clone() == "legacy",
+				jij: false,
                 checksum: Checksum {
 					r#type: ChecksumType::Sha256,
 					hash: checksum?
