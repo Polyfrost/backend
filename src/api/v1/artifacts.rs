@@ -270,7 +270,7 @@ async fn oneconfig(
 	let latest_universalcraft_url = format!(
 		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
 		maven_url = state.public_maven_url,
-		group = POLYFROST_GROUP,
+		group = POLYFROST_GROUP.replace('.', "/"),
 		artifact = format!(
 			"universalcraft-{}-{}",
 			query.version_info.version, query.version_info.loader
@@ -306,7 +306,7 @@ async fn oneconfig(
 				"{maven_url}{repository}/{group}/{artifact}/{version}/\
 				 {artifact}-{version}.jar",
 				maven_url = state.public_maven_url,
-				group = ONECONFIG_GROUP.to_string() + ".dependencies",
+				group = (ONECONFIG_GROUP.to_string() + ".dependencies").replace('.', "/"),
 				artifact = "legacy",
 				version = latest_oneconfig_version,
 			);
