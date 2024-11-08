@@ -203,7 +203,7 @@ async fn oneconfig(
 
 	// Takes the bundles, resolves all their relevant dependencies, and concurrently
 	// resolves all checksums
-	let dependencies_result = bundles
+	let bundles_dependencies_result = bundles
         .into_iter()
         // Resolve all relevant dependencies of the bundles
         .flat_map(|b| b.variants)
@@ -259,12 +259,47 @@ async fn oneconfig(
         })
         .try_collect();
 
-	match dependencies_result {
+	match bundles_dependencies_result {
 		Ok(mut deps) => artifacts.append(&mut deps),
 		Err(e) =>
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
 				.body(format!("Error resolving dependency {e}")),
+	}
+
+	if query.version_info.loader == ModLoader::Forge {
+		let version = query.version_info.version.clone();
+		if version == "1.8.9" || version == "1.12.2" {
+			let latest_oneconfig_legacy_dependencies_url = format!(
+				"{maven_url}{repository}/{group}/{artifact}/{version}/\
+				 {artifact}-{version}.jar",
+				maven_url = state.public_maven_url,
+				group = ONECONFIG_GROUP.to_string() + ".dependencies",
+				artifact = "legacy",
+				version = latest_oneconfig_version,
+			);
+
+			let Ok(checksum) = maven::fetch_checksum(
+				&state.client,
+				&latest_oneconfig_legacy_dependencies_url
+			)
+			.await
+			else {
+				return HttpResponse::InternalServerError()
+					.body("unable to fetch checksum for legacy dependencies");
+			};
+
+			artifacts.push(ArtifactResponse {
+				group: ONECONFIG_GROUP.to_string() + ".dependencies",
+				name: "legacy".to_string(),
+				jij: true,
+				checksum: Checksum {
+					r#type: ChecksumType::Sha256,
+					hash: checksum
+				},
+				url: latest_oneconfig_legacy_dependencies_url
+			});
+		}
 	}
 
 	// Convert artifacts to JSON and insert a copy into the cache
