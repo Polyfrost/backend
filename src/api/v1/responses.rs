@@ -12,6 +12,7 @@ pub mod consts {
 pub struct ArtifactResponse {
 	pub group: String,
 	pub name: String,
+	pub jij: bool,
 	pub checksum: Checksum,
 	pub url: String // signatures: TODO
 }

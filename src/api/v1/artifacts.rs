@@ -134,11 +134,12 @@ async fn oneconfig(
 			.body("unable to fetch checksum for oneconfig");
 	};
 	artifacts.push(ArtifactResponse {
+		group: ONECONFIG_GROUP.to_string(),
 		name: format!(
 			"{}-{}",
 			query.version_info.version, query.version_info.loader
 		),
-		group: ONECONFIG_GROUP.to_string(),
+		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
 			hash: checksum
@@ -246,12 +247,13 @@ async fn oneconfig(
         .into_iter()
         .map(|(dep, checksum, dep_url)| {
             Ok::<_, MavenError>(ArtifactResponse {
+                name: dep.module.clone(),
+                group: dep.group,
+				jij: dep.module.clone() == "jij",
                 checksum: Checksum {
 					r#type: ChecksumType::Sha256,
 					hash: checksum?
 				},
-                name: dep.module,
-                group: dep.group,
                 url: dep_url,
             })
         })
@@ -345,6 +347,7 @@ async fn platform_agnostic_artifacts(
 	let response = match serde_json::to_string(&ArtifactResponse {
 		name: artifact.clone(),
 		group: ONECONFIG_GROUP.to_string(),
+		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
 			hash: checksum
