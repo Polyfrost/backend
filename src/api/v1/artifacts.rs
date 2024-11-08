@@ -267,6 +267,38 @@ async fn oneconfig(
 				.body(format!("Error resolving dependency {e}")),
 	}
 
+	let latest_universalcraft_url = format!(
+		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
+		maven_url = state.public_maven_url,
+		group = POLYFROST_GROUP,
+		artifact = format!(
+			"universalcraft-{}-{}",
+			query.version_info.version, query.version_info.loader
+		),
+		version = latest_oneconfig_version,
+	);
+
+	let Ok(universalcraft_checksum) =
+		maven::fetch_checksum(&state.client, &latest_universalcraft_url).await
+	else {
+		return HttpResponse::InternalServerError()
+			.body("unable to fetch checksum for legacy dependencies");
+	};
+
+	artifacts.push(ArtifactResponse {
+		group: POLYFROST_GROUP.to_string(),
+		name: format!(
+			"universalcraft-{}-{}",
+			query.version_info.version, query.version_info.loader
+		),
+		jij: true,
+		checksum: Checksum {
+			r#type: ChecksumType::Sha256,
+			hash: universalcraft_checksum
+		},
+		url: latest_universalcraft_url
+	});
+
 	if query.version_info.loader == ModLoader::Forge {
 		let version = query.version_info.version.clone();
 		if version == "1.8.9" || version == "1.12.2" {
