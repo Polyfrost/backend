@@ -282,7 +282,7 @@ async fn oneconfig(
 		maven::fetch_checksum(&state.client, &latest_universalcraft_url).await
 	else {
 		return HttpResponse::InternalServerError()
-			.body("unable to fetch checksum for legacy dependencies");
+			.body("unable to fetch checksum for universalcraft");
 	};
 
 	artifacts.push(ArtifactResponse {
