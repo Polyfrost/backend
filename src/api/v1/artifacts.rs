@@ -291,7 +291,7 @@ async fn oneconfig(
 				}
 
 				latest_universalcraft_url = format!(
-					"{maven_url}{repository}/{group}/{artifact}/{version}/\
+					"{maven_url}releases/{group}/{artifact}/{version}/\
 					 {artifact}-{version}.jar",
 					maven_url = state.public_maven_url,
 					repository = "releases",
