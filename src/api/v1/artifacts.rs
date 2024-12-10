@@ -269,7 +269,7 @@ async fn oneconfig(
 
 	let Ok(universalcraft) = fetch_universalcraft_response(
 		&state,
-		repository,
+		query.snapshots,
 		&query.version_info.version,
 		&query.version_info.loader.to_string()
 	)
@@ -329,12 +329,14 @@ async fn oneconfig(
 
 async fn fetch_universalcraft_response(
 	state: &actix_web::web::Data<ApiData>,
-	repository: &str,
+	snapshots: bool,
 	version: &str,
 	loader: &str
 ) -> Result<ArtifactResponse, MavenError> {
+	let repository = if snapshots { "snapshots" } else { "releases" };
+
 	let universalcraft_variant = format!("universalcraft-{}-{}", version, loader);
-	let latest_universalcraft_version = maven::fetch_latest_artifact(
+	let mut latest_universalcraft_version = maven::fetch_latest_artifact(
 		state,
 		repository,
 		POLYFROST_GROUP,
@@ -342,7 +344,7 @@ async fn fetch_universalcraft_response(
 	)
 	.await?;
 
-	let latest_universalcraft_url = format!(
+	let mut latest_universalcraft_url = format!(
 		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
 		maven_url = state.public_maven_url,
 		repository = repository,
@@ -351,8 +353,44 @@ async fn fetch_universalcraft_response(
 		version = latest_universalcraft_version
 	);
 
-	let checksum =
-		maven::fetch_checksum(&state.client, &latest_universalcraft_url).await?;
+	let Ok(checksum) =
+		maven::fetch_checksum(&state.client, &latest_universalcraft_url).await
+	else {
+		if snapshots {
+			latest_universalcraft_version = maven::fetch_latest_artifact(
+				state,
+				"releases",
+				POLYFROST_GROUP,
+				&universalcraft_variant
+			)
+			.await?;
+			latest_universalcraft_url = format!(
+				"{maven_url}releases/{group}/{artifact}/{version}/{artifact}-{version}.\
+				 jar",
+				maven_url = state.public_maven_url,
+				group = POLYFROST_GROUP.replace('.', "/"),
+				artifact = universalcraft_variant,
+				version = latest_universalcraft_version
+			);
+
+			return Ok(ArtifactResponse {
+				group: POLYFROST_GROUP.to_string(),
+				name: universalcraft_variant,
+				jij: true,
+				checksum: Checksum {
+					r#type: ChecksumType::Sha256,
+					hash: maven::fetch_checksum(
+						&state.client,
+						&latest_universalcraft_url
+					)
+					.await?
+				},
+				url: latest_universalcraft_url
+			});
+		} else {
+			return Err(MavenError::NoVersions);
+		}
+	};
 
 	Ok(ArtifactResponse {
 		group: POLYFROST_GROUP.to_string(),
