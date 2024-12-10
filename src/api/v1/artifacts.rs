@@ -267,67 +267,20 @@ async fn oneconfig(
 				.body(format!("Error resolving dependency {e}")),
 	}
 
-	let mut latest_universalcraft_url = format!(
-		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
-		maven_url = state.public_maven_url,
-		group = POLYFROST_GROUP.replace('.', "/"),
-		artifact = format!(
-			"universalcraft-{}-{}",
-			query.version_info.version, query.version_info.loader
-		),
-		version = latest_oneconfig_version,
-	);
+	let Ok(universalcraft) = fetch_universalcraft_response(
+		&state,
+		repository,
+		&query.version_info.version,
+		&query.version_info.loader.to_string()
+	)
+	.await
+	else {
+		return HttpResponse::InternalServerError()
+			.content_type("text/plain")
+			.body("Error resolving universalcraft");
+	};
 
-	let universalcraft_checksum =
-		match maven::fetch_checksum(&state.client, &latest_universalcraft_url).await {
-			Ok(checksum) => checksum,
-			Err(_) => {
-				// If we can't get the UniversalCraft checksum from the snapshots
-				// repository, fallback to the releases repository
-
-				if !query.snapshots {
-					return HttpResponse::InternalServerError()
-						.body("unable to fetch checksum for universalcraft");
-				}
-
-				latest_universalcraft_url = format!(
-					"{maven_url}{repository}/{group}/{artifact}/{version}/\
-					 {artifact}-{version}.jar",
-					maven_url = state.public_maven_url,
-					repository = "releases",
-					group = POLYFROST_GROUP.replace('.', "/"),
-					artifact = format!(
-						"universalcraft-{}-{}",
-						query.version_info.version, query.version_info.loader
-					),
-					version = latest_oneconfig_version,
-				);
-
-				match maven::fetch_checksum(&state.client, &latest_universalcraft_url)
-					.await
-				{
-					Ok(checksum) => checksum,
-					Err(_) => {
-						return HttpResponse::InternalServerError()
-							.body("unable to fetch checksum for universalcraft");
-					}
-				}
-			}
-		};
-
-	artifacts.push(ArtifactResponse {
-		group: POLYFROST_GROUP.to_string(),
-		name: format!(
-			"universalcraft-{}-{}",
-			query.version_info.version, query.version_info.loader
-		),
-		jij: true,
-		checksum: Checksum {
-			r#type: ChecksumType::Sha256,
-			hash: universalcraft_checksum
-		},
-		url: latest_universalcraft_url
-	});
+	artifacts.push(universalcraft);
 
 	if query.version_info.loader == ModLoader::Forge {
 		let version = query.version_info.version.clone();
@@ -372,6 +325,45 @@ async fn oneconfig(
 	HttpResponse::Ok()
 		.content_type("application/json")
 		.body(response)
+}
+
+async fn fetch_universalcraft_response(
+	state: &actix_web::web::Data<ApiData>,
+	repository: &str,
+	version: &str,
+	loader: &str
+) -> Result<ArtifactResponse, MavenError> {
+	let universalcraft_variant = format!("universalcraft-{}-{}", version, loader);
+	let latest_universalcraft_version = maven::fetch_latest_artifact(
+		state,
+		repository,
+		POLYFROST_GROUP,
+		&universalcraft_variant
+	)
+	.await?;
+
+	let latest_universalcraft_url = format!(
+		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
+		maven_url = state.public_maven_url,
+		repository = repository,
+		group = POLYFROST_GROUP.replace('.', "/"),
+		artifact = universalcraft_variant,
+		version = latest_universalcraft_version
+	);
+
+	let checksum =
+		maven::fetch_checksum(&state.client, &latest_universalcraft_url).await?;
+
+	Ok(ArtifactResponse {
+		group: POLYFROST_GROUP.to_string(),
+		name: universalcraft_variant,
+		jij: true,
+		checksum: Checksum {
+			r#type: ChecksumType::Sha256,
+			hash: checksum
+		},
+		url: latest_universalcraft_url
+	})
 }
 
 #[get("/{artifact:stage1|relaunch}")]
