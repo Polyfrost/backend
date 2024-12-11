@@ -267,20 +267,34 @@ async fn oneconfig(
 				.body(format!("Error resolving dependency {e}")),
 	}
 
-	let Ok(universalcraft) = fetch_universalcraft_response(
+	// let Ok(universalcraft) = fetch_universalcraft_response(
+	// &state,
+	// query.snapshots,
+	// &query.version_info.version,
+	// &query.version_info.loader.to_string()
+	// )
+	// .await
+	// else {
+	// return HttpResponse::InternalServerError()
+	// .content_type("text/plain")
+	// .body("Error resolving universalcraft");
+	// };
+
+	let universalcraft = fetch_universalcraft_response(
 		&state,
 		query.snapshots,
 		&query.version_info.version,
 		&query.version_info.loader.to_string()
 	)
-	.await
-	else {
-		return HttpResponse::InternalServerError()
-			.content_type("text/plain")
-			.body("Error resolving universalcraft");
-	};
+	.await;
 
-	artifacts.push(universalcraft);
+	match universalcraft {
+		Ok(universalcraft) => artifacts.push(universalcraft),
+		Err(e) =>
+			return HttpResponse::InternalServerError()
+				.content_type("text/plain")
+				.body(format!("Error resolving universalcraft {e}")),
+	}
 
 	if query.version_info.loader == ModLoader::Forge {
 		let version = query.version_info.version.clone();
@@ -388,7 +402,7 @@ async fn fetch_universalcraft_response(
 				url: latest_universalcraft_url
 			});
 		} else {
-			return Err(MavenError::NoVersions);
+			return Err(MavenError::NoArtifacts);
 		}
 	};
 
