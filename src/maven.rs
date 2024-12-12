@@ -100,9 +100,7 @@ pub async fn fetch_latest_artifact(
 		.versions
 		.versions
 		.into_iter()
-		.map(|v| semver::Version::parse(&v))
-		.collect::<Result<Vec<_>, semver::Error>>()?
-		.into_iter()
+		.filter_map(|v| semver::Version::parse(&v).ok())
 		.max()
 		.ok_or(MavenError::NoVersions)
 }
