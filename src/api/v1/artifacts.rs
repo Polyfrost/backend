@@ -294,84 +294,38 @@ async fn oneconfig(
 	}
 
 	let minecraft_version = query.version_info.version.clone();
-	if minecraft_version == "1.8.9" || minecraft_version == "1.12.2" {
-		let latest_polymixin_version = match maven::fetch_latest_artifact(
-			&state,
-			repository,
-			POLYFROST_GROUP,
-			"polymixin"
-		)
-		.await
-		{
-			Ok(v) => v,
-			Err(e) => {
-				return HttpResponse::InternalServerError()
-					.content_type("text/plain")
-					.body(format!("Error fetching latest polymixin version: {e}"));
-			}
-		};
-
-		let polymixin_url = format!(
+	if (minecraft_version == "1.8.9" || minecraft_version == "1.12.2")
+		&& query.version_info.loader == ModLoader::Forge
+	{
+		let latest_oneconfig_legacy_dependencies_url = format!(
 			"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.\
 			 jar",
 			maven_url = state.public_maven_url,
-			repository = repository,
-			group = POLYFROST_GROUP.replace('.', "/"),
-			artifact = "polymixin",
-			version = latest_polymixin_version
+			group = (ONECONFIG_GROUP.to_string() + ".dependencies").replace('.', "/"),
+			artifact = "legacy",
+			version = latest_oneconfig_version,
 		);
 
-		let checksum = match maven::fetch_checksum(&state.client, &polymixin_url).await {
-			Ok(checksum) => checksum,
-			Err(e) => {
-				return HttpResponse::InternalServerError()
-					.content_type("text/plain")
-					.body(format!("Error fetching checksum for polymixin: {e}"));
-			}
+		let Ok(checksum) = maven::fetch_checksum(
+			&state.client,
+			&latest_oneconfig_legacy_dependencies_url
+		)
+		.await
+		else {
+			return HttpResponse::InternalServerError()
+				.body("unable to fetch checksum for legacy dependencies");
 		};
 
 		artifacts.push(ArtifactResponse {
-			group: POLYFROST_GROUP.to_string(),
-			name: "polymixin".to_string(),
-			jij: false,
+			group: ONECONFIG_GROUP.to_string() + ".dependencies",
+			name: "legacy".to_string(),
+			jij: true,
 			checksum: Checksum {
 				r#type: ChecksumType::Sha256,
 				hash: checksum
 			},
-			url: polymixin_url
+			url: latest_oneconfig_legacy_dependencies_url
 		});
-
-		if query.version_info.loader == ModLoader::Forge {
-			let latest_oneconfig_legacy_dependencies_url = format!(
-				"{maven_url}{repository}/{group}/{artifact}/{version}/\
-				 {artifact}-{version}.jar",
-				maven_url = state.public_maven_url,
-				group = (ONECONFIG_GROUP.to_string() + ".dependencies").replace('.', "/"),
-				artifact = "legacy",
-				version = latest_oneconfig_version,
-			);
-
-			let Ok(checksum) = maven::fetch_checksum(
-				&state.client,
-				&latest_oneconfig_legacy_dependencies_url
-			)
-			.await
-			else {
-				return HttpResponse::InternalServerError()
-					.body("unable to fetch checksum for legacy dependencies");
-			};
-
-			artifacts.push(ArtifactResponse {
-				group: ONECONFIG_GROUP.to_string() + ".dependencies",
-				name: "legacy".to_string(),
-				jij: true,
-				checksum: Checksum {
-					r#type: ChecksumType::Sha256,
-					hash: checksum
-				},
-				url: latest_oneconfig_legacy_dependencies_url
-			});
-		}
 	}
 
 	// Convert artifacts to JSON and insert a copy into the cache
