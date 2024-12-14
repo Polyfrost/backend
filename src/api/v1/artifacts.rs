@@ -133,7 +133,6 @@ async fn oneconfig(
 		version = latest_oneconfig_version,
 	);
 
-	println!("Fetching checksum for oneconfig: {}", latest_oneconfig_url);
 	let checksum = match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await
 	{
 		Ok(checksum) => checksum,
