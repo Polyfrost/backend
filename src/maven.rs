@@ -101,6 +101,16 @@ pub async fn fetch_latest_artifact(
 		.versions
 		.into_iter()
 		.filter_map(|v| semver::Version::parse(&v).ok())
+		.filter(|v| {
+			// Validate pre-release format because SOMEONE made releases like 1.0.0-alpha7
+			// instead of doing it in the proper format...
+
+			let pre = v.pre.as_str();
+			pre.split('.').all(|component| {
+				component.parse::<u64>().is_ok()
+					|| !component.chars().any(|c| c.is_ascii_digit())
+			})
+		})
 		.max()
 		.ok_or(MavenError::NoVersions)
 }
