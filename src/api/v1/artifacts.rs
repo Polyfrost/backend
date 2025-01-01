@@ -191,23 +191,58 @@ async fn oneconfig(
 				continue;
 			}
 
-			let Ok(metadata) = maven::fetch_module_metadata(
-				&state,
-				repository,
-				&dep.group,
-				&dep.module,
-				&dep.version.requires
-			)
-			.await
-			else {
-				return HttpResponse::InternalServerError()
-					.content_type("text/plain")
-					.body(format!(
-						"Error resolving dependency {}:{}:{}",
-						dep.group, dep.module, dep.version.requires
-					));
-			};
-			bundles.push(metadata);
+			if dep.module == "bundled" {
+				let Ok(metadata) = maven::fetch_module_metadata(
+					&state,
+					repository,
+					&dep.group,
+					&dep.module,
+					&dep.version.requires
+				)
+				.await
+				else {
+					return HttpResponse::InternalServerError()
+						.content_type("text/plain")
+						.body(format!(
+							"Error resolving dependency {}:{}:{}",
+							dep.group, dep.module, dep.version.requires
+						));
+				};
+				bundles.push(metadata);
+			} else {
+				let internal_dep_url = maven::get_dep_url(
+					&state
+						.internal_maven_url
+						.clone()
+						.unwrap_or(state.public_maven_url.clone()),
+					repository,
+					&dep
+				);
+				let dep_url =
+					maven::get_dep_url(&state.public_maven_url, repository, &dep);
+				let client = state.client.clone();
+				let checksum = async move {
+					maven::fetch_checksum(&client, &internal_dep_url).await
+				};
+
+				let checksum = checksum.await;
+				match checksum {
+					Ok(checksum) => artifacts.push(ArtifactResponse {
+						name: dep.module.clone(),
+						group: dep.group,
+						jij: false,
+						checksum: Checksum {
+							r#type: ChecksumType::Sha256,
+							hash: checksum
+						},
+						url: dep_url
+					}),
+					Err(e) =>
+						return HttpResponse::InternalServerError()
+							.content_type("text/plain")
+							.body(format!("Error resolving dependency {e}")),
+				}
+			}
 		}
 	}
 
