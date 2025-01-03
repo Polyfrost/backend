@@ -63,7 +63,7 @@ async fn main() {
 			.unwrap()
 			.into(),
 		cache: Cache::builder()
-			.time_to_live(Duration::from_minutes(15))
+			.time_to_live(Duration::from_mins(15))
 			.weigher(|k: &CacheKey, v: &CacheValue| {
 				(k.path.len()
 					+ k.query.len() + const { std::mem::size_of::<ETagType>() }
