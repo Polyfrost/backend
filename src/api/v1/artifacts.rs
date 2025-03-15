@@ -28,7 +28,6 @@ use crate::{
 
 const POLYFROST_GROUP: &str = "org.polyfrost";
 const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
-const OMNICORE_GROUP: &str = "dev.deftu";
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	|config| {
@@ -313,7 +312,7 @@ async fn oneconfig(
 				.body(format!("Error resolving dependency {e}")),
 	}
 
-	let omnicore = fetch_omnicore_response(
+	let universalcraft = fetch_universalcraft_response(
 		&state,
 		query.snapshots,
 		&query.version_info.version,
@@ -321,12 +320,12 @@ async fn oneconfig(
 	)
 	.await;
 
-	match omnicore {
-		Ok(omnicore) => artifacts.push(omnicore),
+	match universalcraft {
+		Ok(universalcraft) => artifacts.push(universalcraft),
 		Err(e) =>
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
-				.body(format!("Error resolving omnicore {e}")),
+				.body(format!("Error resolving universalcraft {e}")),
 	}
 
 	let minecraft_version = query.version_info.version.clone();
@@ -374,7 +373,7 @@ async fn oneconfig(
 		.body(response)
 }
 
-async fn fetch_omnicore_response(
+async fn fetch_universalcraft_response(
 	state: &actix_web::web::Data<ApiData>,
 	snapshots: bool,
 	version: &str,
@@ -382,14 +381,14 @@ async fn fetch_omnicore_response(
 ) -> Result<ArtifactResponse, MavenError> {
 	let repository = if snapshots { "snapshots" } else { "releases" };
 
-	let omnicore_module = format!("omnicore-{}-{}", version, loader);
+	let universalcraft_module = format!("universalcraft-{}-{}", version, loader);
 
 	// Attempt to fetch the latest artifact version, with fallback logic
-	let latest_omnicore_version = match maven::fetch_latest_artifact(
+	let latest_universalcraft_version = match maven::fetch_latest_artifact(
 		state,
 		repository,
-		OMNICORE_GROUP,
-		&omnicore_module
+		POLYFROST_GROUP,
+		&universalcraft_module
 	)
 	.await
 	{
@@ -399,8 +398,8 @@ async fn fetch_omnicore_response(
 			maven::fetch_latest_artifact(
 				state,
 				"releases",
-				OMNICORE_GROUP,
-				&omnicore_module
+				POLYFROST_GROUP,
+				&universalcraft_module
 			)
 			.await?
 		}
@@ -408,26 +407,26 @@ async fn fetch_omnicore_response(
 	};
 
 	// Build the artifact URL
-	let latest_omnicore_url = format!(
+	let latest_universalcraft_url = format!(
 		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
 		maven_url = state.public_maven_url,
 		repository = if snapshots { repository } else { "releases" },
-		group = OMNICORE_GROUP.replace('.', "/"),
-		artifact = omnicore_module,
-		version = latest_omnicore_version
+		group = POLYFROST_GROUP.replace('.', "/"),
+		artifact = universalcraft_module,
+		version = latest_universalcraft_version
 	);
 
 	// Attempt to fetch the checksum, with fallback logic
 	let checksum =
-		match maven::fetch_checksum(&state.client, &latest_omnicore_url).await {
+		match maven::fetch_checksum(&state.client, &latest_universalcraft_url).await {
 			Ok(hash) => hash,
 			Err(_) if snapshots => {
 				// If checksum fetch fails for "snapshots", try "releases"
 				let fallback_version = maven::fetch_latest_artifact(
 					state,
 					"releases",
-					OMNICORE_GROUP,
-					&omnicore_module
+					POLYFROST_GROUP,
+					&universalcraft_module
 				)
 				.await?;
 
@@ -435,8 +434,8 @@ async fn fetch_omnicore_response(
 					"{maven_url}releases/{group}/{artifact}/{version}/\
 					 {artifact}-{version}.jar",
 					maven_url = state.public_maven_url,
-					group = OMNICORE_GROUP.replace('.', "/"),
-					artifact = omnicore_module,
+					group = POLYFROST_GROUP.replace('.', "/"),
+					artifact = universalcraft_module,
 					version = fallback_version
 				);
 
@@ -447,14 +446,14 @@ async fn fetch_omnicore_response(
 
 	// Return the constructed ArtifactResponse
 	Ok(ArtifactResponse {
-		group: OMNICORE_GROUP.to_string(),
-		name: omnicore_module,
+		group: POLYFROST_GROUP.to_string(),
+		name: universalcraft_module,
 		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
 			hash: checksum
 		},
-		url: latest_omnicore_url
+		url: latest_universalcraft_url
 	})
 }
 
