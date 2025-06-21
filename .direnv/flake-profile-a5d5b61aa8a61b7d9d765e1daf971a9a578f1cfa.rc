@@ -53,17 +53,17 @@ NIX_CC_WRAPPER_TARGET_BUILD_x86_64_unknown_linux_gnu='1'
 export NIX_CC_WRAPPER_TARGET_BUILD_x86_64_unknown_linux_gnu
 NIX_CC_WRAPPER_TARGET_HOST_x86_64_unknown_linux_gnu='1'
 export NIX_CC_WRAPPER_TARGET_HOST_x86_64_unknown_linux_gnu
-NIX_CFLAGS_COMPILE=' -frandom-seed=amn8l58l69 -isystem /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/include -isystem /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/include'
+NIX_CFLAGS_COMPILE=' -frandom-seed=wb63a96wg5 -isystem /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/include -isystem /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/include'
 export NIX_CFLAGS_COMPILE
-NIX_CFLAGS_COMPILE_FOR_BUILD=' -isystem /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/include -isystem /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/include -isystem /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/include'
+NIX_CFLAGS_COMPILE_FOR_BUILD=' -isystem /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/include -isystem /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/include -isystem /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/include'
 export NIX_CFLAGS_COMPILE_FOR_BUILD
 NIX_ENFORCE_NO_NATIVE='1'
 export NIX_ENFORCE_NO_NATIVE
 NIX_HARDENING_ENABLE='bindnow format fortify fortify3 pic relro stackclashprotection stackprotector strictoverflow zerocallusedregs'
 export NIX_HARDENING_ENABLE
-NIX_LDFLAGS='-rpath /home/ty/Dev/backend/outputs/out/lib  -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1/lib'
+NIX_LDFLAGS='-rpath /home/ty/Dev/backend/outputs/out/lib  -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/lib'
 export NIX_LDFLAGS
-NIX_LDFLAGS_FOR_BUILD=' -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1/lib'
+NIX_LDFLAGS_FOR_BUILD=' -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/lib -L/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/lib -L/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/lib'
 export NIX_LDFLAGS_FOR_BUILD
 NIX_NO_SELF_RPATH='1'
 NIX_PKG_CONFIG_WRAPPER_TARGET_HOST_x86_64_unknown_linux_gnu='1'
@@ -86,11 +86,11 @@ OLDPWD=''
 export OLDPWD
 OPTERR='1'
 OSTYPE='linux-gnu'
-PATH='/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0/bin:/nix/store/sa7j7cddyblhcb3ch3ds10w7nw75yjj1-gcc-14.3.0/bin:/nix/store/mdmsnfcvxyk5ynz7nx8nhss1wig0gljx-glibc-2.40-66-bin/bin:/nix/store/psy9v2asypgl9ylg8cnzkixc7fv0snj0-coreutils-9.7/bin:/nix/store/cadx5p7c0i06gf6h84iw9mrhx56imbv0-binutils-wrapper-2.44/bin:/nix/store/z3za8hfc24wb117s50p8b10agjkgm039-binutils-2.44/bin:/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/bin:/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2/bin:/nix/store/74k8qwbfa6lm8psm2vjh2vj04fpr6c5g-openssl-3.4.1-bin/bin:/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0/bin:/nix/store/psy9v2asypgl9ylg8cnzkixc7fv0snj0-coreutils-9.7/bin:/nix/store/c14zwgl8hf1wm0izij2i16xvk8ak70cy-findutils-4.10.0/bin:/nix/store/ibx4jfwlhjg4g0s6rrxrpaxa3ka8ns4m-diffutils-3.12/bin:/nix/store/pr318zsl44jdwpk9wk0sdrn19b6in7ah-gnused-4.9/bin:/nix/store/bc6zxzjnkjp4r9nhz5imy3cypvdh6r4n-gnugrep-3.12/bin:/nix/store/nv3y7zb1cwz1h9qy7nwz0s54j8dl1kqj-gawk-5.3.2/bin:/nix/store/lp82dcnrzljyix6yigwzrlpr1smvpmb0-gnutar-1.35/bin:/nix/store/6ag5dhk7sma61p6vl0kazfmpbrq08nqh-gzip-1.14/bin:/nix/store/ykdv4id6893gmkqwdmbimq237c1xqvq7-bzip2-1.0.8-bin/bin:/nix/store/6bwp1y45zlyvpr4ja2sk1yi9v5mrs94x-gnumake-4.4.1/bin:/nix/store/00zrahbb32nzawrmv9sjxn36h7qk9vrs-bash-5.2p37/bin:/nix/store/c9xmgszbf6i4dfq9r953khk9d7fdqigw-patch-2.8/bin:/nix/store/ikfwx7kbwz9zr7fziiac7f57jgbh3bnv-xz-5.8.1-bin/bin:/nix/store/3pdmbqy86wsbjdazxv1n3vrmj60vn0ri-file-5.45/bin'
+PATH='/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0/bin:/nix/store/sa7j7cddyblhcb3ch3ds10w7nw75yjj1-gcc-14.3.0/bin:/nix/store/mdmsnfcvxyk5ynz7nx8nhss1wig0gljx-glibc-2.40-66-bin/bin:/nix/store/psy9v2asypgl9ylg8cnzkixc7fv0snj0-coreutils-9.7/bin:/nix/store/cadx5p7c0i06gf6h84iw9mrhx56imbv0-binutils-wrapper-2.44/bin:/nix/store/z3za8hfc24wb117s50p8b10agjkgm039-binutils-2.44/bin:/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/bin:/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2/bin:/nix/store/0wh8cs5b67aw7xmz9kw0nq40ry8i5wcx-rsync-3.4.1/bin:/nix/store/k8d3qrw7hss3ynyfvgj1fkkfbbzh874k-zstd-1.5.7-bin/bin:/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/bin:/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0/bin:/nix/store/psy9v2asypgl9ylg8cnzkixc7fv0snj0-coreutils-9.7/bin:/nix/store/c14zwgl8hf1wm0izij2i16xvk8ak70cy-findutils-4.10.0/bin:/nix/store/ibx4jfwlhjg4g0s6rrxrpaxa3ka8ns4m-diffutils-3.12/bin:/nix/store/pr318zsl44jdwpk9wk0sdrn19b6in7ah-gnused-4.9/bin:/nix/store/bc6zxzjnkjp4r9nhz5imy3cypvdh6r4n-gnugrep-3.12/bin:/nix/store/nv3y7zb1cwz1h9qy7nwz0s54j8dl1kqj-gawk-5.3.2/bin:/nix/store/lp82dcnrzljyix6yigwzrlpr1smvpmb0-gnutar-1.35/bin:/nix/store/6ag5dhk7sma61p6vl0kazfmpbrq08nqh-gzip-1.14/bin:/nix/store/ykdv4id6893gmkqwdmbimq237c1xqvq7-bzip2-1.0.8-bin/bin:/nix/store/6bwp1y45zlyvpr4ja2sk1yi9v5mrs94x-gnumake-4.4.1/bin:/nix/store/00zrahbb32nzawrmv9sjxn36h7qk9vrs-bash-5.2p37/bin:/nix/store/c9xmgszbf6i4dfq9r953khk9d7fdqigw-patch-2.8/bin:/nix/store/ikfwx7kbwz9zr7fziiac7f57jgbh3bnv-xz-5.8.1-bin/bin:/nix/store/3pdmbqy86wsbjdazxv1n3vrmj60vn0ri-file-5.45/bin'
 export PATH
 PKG_CONFIG='pkg-config'
 export PKG_CONFIG
-PKG_CONFIG_PATH='/nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev/lib/pkgconfig'
+PKG_CONFIG_PATH='/nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev/lib/pkgconfig'
 export PKG_CONFIG_PATH
 PS4='+ '
 RANLIB='ranlib'
@@ -117,7 +117,7 @@ STRIP='strip'
 export STRIP
 STRIP_FOR_BUILD='strip'
 export STRIP_FOR_BUILD
-XDG_DATA_DIRS='/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/share:/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2/share:/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0/share'
+XDG_DATA_DIRS='/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20/share:/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2/share:/nix/store/0wh8cs5b67aw7xmz9kw0nq40ry8i5wcx-rsync-3.4.1/share:/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7/share:/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0/share'
 export XDG_DATA_DIRS
 __structuredAttrs=''
 export __structuredAttrs
@@ -177,7 +177,7 @@ mesonFlags=''
 export mesonFlags
 name='nix-shell-env'
 export name
-nativeBuildInputs='/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2 /nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev'
+nativeBuildInputs='/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2 /nix/store/m79jiw985nykhwkq3x98nd32vh5j7nhx-installFromCargoBuildLogHook /nix/store/196hq9gjvqkni73pqaicw63vzb5nf7jw-removeReferencesToRustToolchainHook /nix/store/ip2wjykf4d7dh0pga0xnqrpzd3vr87i2-removeReferencesToVendoredSourcesHook /nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/ris053vflh1xgkc1w489cp62l4xj5jjd-cargoHelperFunctionsHook /nix/store/m0qdbmw41qxn71bavq992aj98wamwlns-configureCargoCommonVarsHook /nix/store/5xnyacf51z9zlgkbvcjh92fpfvqlrbm1-configureCargoVendoredDepsHook /nix/store/9zgcjz72w875rmpzjas75459mdhqrfyl-inheritCargoArtifactsHook /nix/store/4s0lwn0mbqcs4bidfpki6y5g23mdwn3z-installCargoArtifactsHook /nix/store/5c0lapsgz45hmzmlr55jzclyky3pmja6-replaceCargoLockHook /nix/store/0wh8cs5b67aw7xmz9kw0nq40ry8i5wcx-rsync-3.4.1 /nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20 /nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev'
 export nativeBuildInputs
 out='/home/ty/Dev/backend/outputs/out'
 export out
@@ -198,12 +198,16 @@ phases='buildPhase'
 export phases
 pkg='/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0'
 declare -a pkgsBuildBuild=('/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0' '/nix/store/cadx5p7c0i06gf6h84iw9mrhx56imbv0-binutils-wrapper-2.44' )
-declare -a pkgsBuildHost=('/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20' '/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0' '/nix/store/cadx5p7c0i06gf6h84iw9mrhx56imbv0-binutils-wrapper-2.44' '/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2' '/nix/store/k0699a27nkj4c2xn67bjcpfa08nqn9l4-openssl-3.4.1-dev' '/nix/store/74k8qwbfa6lm8psm2vjh2vj04fpr6c5g-openssl-3.4.1-bin' '/nix/store/byx7ahs386pskh8d5sdkrkpscfz9yyjp-openssl-3.4.1' '/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0' '/nix/store/063qqmawmq7bg75b56mgynw9s3rbx2ww-update-autotools-gnu-config-scripts-hook' '/nix/store/jjhw2phnaip4kg0qjas3x3fsaifi8y0w-no-broken-symlinks.sh' '/nix/store/cwvwai4ni9hmzaqvnvf1i5pvjh1hj36c-audit-tmpdir.sh' '/nix/store/4bawv6x85435v6s624sfk5cdpg9gr6yq-compress-man-pages.sh' '/nix/store/wgrbkkaldkrlrni33ccvm3b6vbxzb656-make-symlinks-relative.sh' '/nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh' '/nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh' '/nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh' '/nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh' '/nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh' '/nix/store/cq0kx53m7qhq7dvk5s96fazjlqf1bg4j-parallel.sh' '/nix/store/hxv896faph0rqxjq2ycxpcrbnngc95sz-patch-shebangs.sh' '/nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh' '/nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh' '/nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh' '/nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh' )
+declare -a pkgsBuildHost=('/nix/store/lm1v3lwvmx3l67s6ia92q3qwkkk00h48-rust-default-1.89.0-nightly-2025-06-20' '/nix/store/pbqah1qk4b5y14fqinr1h8zvhqy71v81-gcc-wrapper-14.3.0' '/nix/store/cadx5p7c0i06gf6h84iw9mrhx56imbv0-binutils-wrapper-2.44' '/nix/store/h5khrpnjj3fb182sc32fx1z75w0lhksy-pkg-config-wrapper-0.29.2' '/nix/store/m79jiw985nykhwkq3x98nd32vh5j7nhx-installFromCargoBuildLogHook' '/nix/store/196hq9gjvqkni73pqaicw63vzb5nf7jw-removeReferencesToRustToolchainHook' '/nix/store/ip2wjykf4d7dh0pga0xnqrpzd3vr87i2-removeReferencesToVendoredSourcesHook' '/nix/store/ris053vflh1xgkc1w489cp62l4xj5jjd-cargoHelperFunctionsHook' '/nix/store/m0qdbmw41qxn71bavq992aj98wamwlns-configureCargoCommonVarsHook' '/nix/store/5xnyacf51z9zlgkbvcjh92fpfvqlrbm1-configureCargoVendoredDepsHook' '/nix/store/9zgcjz72w875rmpzjas75459mdhqrfyl-inheritCargoArtifactsHook' '/nix/store/4s0lwn0mbqcs4bidfpki6y5g23mdwn3z-installCargoArtifactsHook' '/nix/store/5c0lapsgz45hmzmlr55jzclyky3pmja6-replaceCargoLockHook' '/nix/store/0wh8cs5b67aw7xmz9kw0nq40ry8i5wcx-rsync-3.4.1' '/nix/store/j7srhraly1gf2zklj4wbdby02a1z7ckx-zstd-1.5.7-dev' '/nix/store/k8d3qrw7hss3ynyfvgj1fkkfbbzh874k-zstd-1.5.7-bin' '/nix/store/and18rawgmwws8l2favbjr5wm31jnr4a-zstd-1.5.7' '/nix/store/1c8sm86wj45vwkb3ww2b870h9i9wna6r-patchelf-0.15.0' '/nix/store/063qqmawmq7bg75b56mgynw9s3rbx2ww-update-autotools-gnu-config-scripts-hook' '/nix/store/jjhw2phnaip4kg0qjas3x3fsaifi8y0w-no-broken-symlinks.sh' '/nix/store/cwvwai4ni9hmzaqvnvf1i5pvjh1hj36c-audit-tmpdir.sh' '/nix/store/4bawv6x85435v6s624sfk5cdpg9gr6yq-compress-man-pages.sh' '/nix/store/wgrbkkaldkrlrni33ccvm3b6vbxzb656-make-symlinks-relative.sh' '/nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh' '/nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh' '/nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh' '/nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh' '/nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh' '/nix/store/cq0kx53m7qhq7dvk5s96fazjlqf1bg4j-parallel.sh' '/nix/store/hxv896faph0rqxjq2ycxpcrbnngc95sz-patch-shebangs.sh' '/nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh' '/nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh' '/nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh' '/nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh' )
 declare -a pkgsBuildTarget=()
 declare -a pkgsHostHost=()
 declare -a pkgsHostTarget=()
 declare -a pkgsTargetTarget=()
+declare -a postBuildHooks=('postBuildInstallFromCargoBuildLog' )
+postBuildInstallFromCargoBuildLogOut='postBuildInstallFromCargoBuildLogOutTemplxp'
 declare -a postFixupHooks=('noBrokenSymlinksInAllOutputs' '_makeSymlinksRelativeInAllOutputs' '_multioutPropagateDev' )
+declare -a postInstallHooks=('removeReferencesToRustToolchain' )
+declare -a postPatchHooks=('configureCargoCommonVars' )
 declare -a postUnpackHooks=('_updateSourceDateEpochFromSourceRoot' )
 declare -a preConfigureHooks=('_multioutConfig' )
 preConfigurePhases=' updateAutotoolsGnuConfigScriptsPhase'
@@ -851,6 +855,23 @@ buildPhase ()
     fi;
     runHook postBuild
 }
+cargo ()
+{
+ 
+    ( set -x;
+    command cargo "$@" )
+}
+cargoWithProfile ()
+{
+ 
+    local profileArgs;
+    if [[ "${CARGO_PROFILE}" == "release" ]]; then
+        profileArgs="--release";
+    else
+        profileArgs="${CARGO_PROFILE:+--profile ${CARGO_PROFILE}}";
+    fi;
+    cargo "${@:1:1}" ${profileArgs} "${@:2}"
+}
 ccWrapper_addCVars ()
 {
  
@@ -891,6 +912,41 @@ checkPhase ()
         unset flagsArray;
     fi;
     runHook postCheck
+}
+compressAndInstallCargoArtifactsDir ()
+{
+ 
+    local dir="${1:?destination directory not defined}";
+    local cargoTargetDir="${2:?cargoTargetDir not defined}";
+    local prevArtifacts="${3}";
+    mkdir -p "${dir}";
+    local dest="${dir}/target.tar.zst";
+    ( export SOURCE_DATE_EPOCH=1;
+    function dynTar () 
+    { 
+        ( cd "${cargoTargetDir}";
+        if [ -n "${doCompressAndInstallFullArchive}" ]; then
+            echo "compressing and installing full archive of ${cargoTargetDir} to ${dest} as requested" 1>&2;
+            tar "$@" .;
+        else
+            if [ "$(uname -s)" == "Darwin" ]; then
+                echo "incremental zstd compression not currently supported on Darwin: https://github.com/rust-lang/rust/issues/115982" 1>&2;
+                echo "doing a full archive install of ${cargoTargetDir} to ${dest}" 1>&2;
+                tar "$@" .;
+            else
+                if [ -z "${prevArtifacts}" ]; then
+                    echo "no previous artifacts found, compressing and installing full archive of ${cargoTargetDir} to ${dest}" 1>&2;
+                    tar "$@" .;
+                else
+                    echo "linking previous artifacts ${prevArtifacts} to ${dest}" 1>&2;
+                    ln -s "${prevArtifacts}" "${dest}.prev";
+                    touch -d @${SOURCE_DATE_EPOCH} "${TMPDIR}/.crane.source-date-epoch";
+                    tar --null --no-recursion -T <(find . -newer "${TMPDIR}/.crane.source-date-epoch" -print0) "$@";
+                fi;
+            fi;
+        fi )
+    };
+    dynTar --sort=name --mtime="@${SOURCE_DATE_EPOCH}" --owner=0 --group=0 --mode=u+w --numeric-owner --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime -c | zstd "-T${NIX_BUILD_CORES:-0}" -o "${dest}" ${zstdCompressionExtraArgs:-} )
 }
 compressManPages ()
 {
@@ -970,6 +1026,59 @@ concatTo ()
         fi;
     done
 }
+configureCargoCommonVars ()
+{
+ 
+    echo "Executing configureCargoCommonVars";
+    export CARGO_HOME=${CARGO_HOME:-${PWD}/.cargo-home};
+    mkdir -p ${CARGO_HOME};
+    export CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS:-$NIX_BUILD_CORES};
+    export RUST_TEST_THREADS=${RUST_TEST_THREADS:-$NIX_BUILD_CORES};
+    export CARGO_BUILD_INCREMENTAL=${CARGO_BUILD_INCREMENTAL-false};
+    CARGO_PROFILE=${CARGO_PROFILE-release};
+    local craneVar;
+    local didPreamble="";
+    for craneVar in ${!__CRANE_EXPORT_*};
+    do
+        local var="${craneVar#__CRANE_EXPORT_}";
+        if [ -z "${!var}" ]; then
+            if [ -z "${didPreamble}" ]; then
+                local didPreamble="1";
+                echo '----------------------------------------------------------------------------------';
+                echo 'NOTICE: setting the following environment variables for cross-compilation purposes';
+                echo ' - if this is unwanted, you can set them to a non-empty value';
+                echo ' - alternatively, you can disable the built-in cross compilation support';
+                echo '   by setting `doIncludeCrossToolchainEnv = false` in the derivation';
+            fi;
+            local value="${!craneVar}";
+            echo "${var}"="${value}";
+            export "${var}"="${value}";
+        fi;
+    done;
+    if [ -n "${didPreamble}" ]; then
+        echo '----------------------------------------------------------------------------------';
+    fi
+}
+configureCargoVendoredDepsHook ()
+{
+ 
+    local vendoredDir="${1:-${cargoVendorDir:?not defined}}";
+    local cargoConfig="${2:-${CARGO_HOME:?not defined}/config.toml}";
+    if [[ -f "${vendoredDir}/config.toml" ]]; then
+        echo will append ${cargoConfig} with contents of ${vendoredDir}/config.toml;
+        cat "${vendoredDir}/config.toml" >> "${cargoConfig}";
+        return;
+    fi;
+    echo setting source replacement config in ${cargoConfig} using vendored directory ${vendoredDir};
+    cat >> "${cargoConfig}" <<EOF
+
+[source.crates-io]
+replace-with = "nix-sources"
+[source.nix-sources]
+directory = "${vendoredDir}"
+EOF
+
+}
 configurePhase ()
 {
  
@@ -1025,6 +1134,26 @@ consumeEntire ()
         echo "consumeEntire(): ERROR: Input null bytes, won't process" 1>&2;
         return 1;
     fi
+}
+dedupAndInstallCargoArtifactsDir ()
+{
+ 
+    local dest="${1:?destination directory not defined}";
+    local cargoTargetDir="${2:?cargoTargetDir not defined}";
+    local prevCargoTargetDir="${3:?prevCargoTargetDir not defined}";
+    mkdir -p "${dest}";
+    if [ -d "${prevCargoTargetDir}" ]; then
+        echo "symlinking duplicates in ${cargoTargetDir} to ${prevCargoTargetDir}";
+        while read -r fullTargetFile; do
+            local targetFile="${fullTargetFile#"${cargoTargetDir}"}";
+            local candidateOrigFile="${prevCargoTargetDir}/${targetFile#/}";
+            if cmp --silent "${candidateOrigFile}" "${fullTargetFile}"; then
+                ln --symbolic --force --logical "${candidateOrigFile}" "${fullTargetFile}";
+            fi;
+        done < <(find "${cargoTargetDir}" -type f);
+    fi;
+    echo installing "${cargoTargetDir}" to "${dest}";
+    mv "${cargoTargetDir}" --target-directory="${dest}"
 }
 distPhase ()
 {
@@ -1283,6 +1412,59 @@ getTargetRoleWrapper ()
         ;;
     esac
 }
+inheritCargoArtifacts ()
+{
+ 
+    local preparedArtifacts="${1:-${cargoArtifacts:?not defined}}";
+    local cargoTargetDir="${2:-${CARGO_TARGET_DIR:-target}}";
+    if [ -d "${preparedArtifacts}" ]; then
+        local candidateTarZst="${preparedArtifacts}/target.tar.zst";
+        local candidateTargetDir="${preparedArtifacts}/target";
+        if [ -f "${candidateTarZst}" ]; then
+            local preparedArtifacts="${candidateTarZst}";
+        else
+            if [ -d "${candidateTargetDir}" ]; then
+                local preparedArtifacts="${candidateTargetDir}";
+            fi;
+        fi;
+    fi;
+    mkdir -p "${cargoTargetDir}";
+    if [ -f "${preparedArtifacts}" ]; then
+        local prevArtifactsCandidate="${preparedArtifacts}.prev";
+        if [ -f "${prevArtifactsCandidate:-}" ]; then
+            inheritCargoArtifacts "$(realpath "${prevArtifactsCandidate}")" "$cargoTargetDir";
+        fi;
+        echo "decompressing cargo artifacts from ${preparedArtifacts} to ${cargoTargetDir}";
+        mkdir -p "${cargoTargetDir}";
+        zstd -d "${preparedArtifacts}" --stdout | tar -x -C "${cargoTargetDir}";
+    else
+        if [ -d "${preparedArtifacts}" ]; then
+            echo "copying cargo artifacts from ${preparedArtifacts} to ${cargoTargetDir}";
+            if [ -n "${doNotLinkInheritedArtifacts}" ]; then
+                echo 'will deep copy artifacts (instead of symlinking) as requested';
+                cp -r "${preparedArtifacts}" --dereference --no-target-directory "${cargoTargetDir}" --preserve=timestamps --no-preserve=ownership;
+                chmod -R u+w "${cargoTargetDir}";
+                find "${cargoTargetDir}" -name '.cargo-lock' -delete;
+            else
+                rsync --recursive --links --times --chmod=u+w --executability --exclude 'deps/*.rlib' --exclude 'deps/*.rmeta' "${preparedArtifacts}/" "${cargoTargetDir}/";
+                find "${cargoTargetDir}" -name '.cargo-lock' -delete -execdir bash -c '
+         for f in *.d; do
+           cp --preserve=timestamps --no-preserve=ownership --remove-destination "$(readlink "${f}")" "${f}"
+           chmod u+w "${f}"
+         done
+       ' \;;
+                local linkCandidates=$(mktemp linkCandidatesXXXX.txt);
+                find "${preparedArtifacts}" '(' -path '*/deps/*.rlib' -or -path '*/deps/*.rmeta' ')' -printf "%P\n" > "${linkCandidates}";
+                cat "${linkCandidates}" | xargs --no-run-if-empty -n1 dirname | sort -u | ( cd "${cargoTargetDir}";
+                xargs --no-run-if-empty mkdir -p );
+                cat "${linkCandidates}" | xargs -P ${NIX_BUILD_CORES} -I '##{}##' ln -s "${preparedArtifacts}/##{}##" "${cargoTargetDir}/##{}##";
+            fi;
+        else
+            echo unable to copy cargo artifacts, \"${preparedArtifacts}\" looks invalid;
+            false;
+        fi;
+    fi
+}
 installCheckPhase ()
 {
  
@@ -1301,6 +1483,49 @@ installCheckPhase ()
         fi;
     fi;
     runHook postInstallCheck
+}
+installFromCargoBuildLog ()
+{
+ 
+    ( local dest=${1:-${out}};
+    local log=${2:-${cargoBuildLog:?not defined}};
+    if ! [ -f "${log}" ]; then
+        echo unable to install, cargo build log does not exist at: ${log};
+        false;
+    fi;
+    echo searching for bins/libs to install from cargo build log at ${log};
+    local logs;
+    logs=$(/nix/store/2n9hfcfqdszxgsmi4qyqq6rv947dwwg9-jq-1.8.0-bin/bin/jq -R 'fromjson?' < "${log}");
+    local select_non_deps_artifact='select(contains("/deps/artifact/") | not)';
+    local members="$(command cargo metadata --format-version 1 | /nix/store/2n9hfcfqdszxgsmi4qyqq6rv947dwwg9-jq-1.8.0-bin/bin/jq -c '.workspace_members')";
+    local select_non_test_members='select(.reason == "compiler-artifact" and .profile.test == false)
+    | select(.package_id as $pid
+      | '"${members}"'
+      | contains([$pid])
+    )';
+    local select_bins="${select_non_test_members}| .executable | select(.!= null) | ${select_non_deps_artifact}";
+    local select_lib_files="${select_non_test_members}"'
+    | select(.target.kind
+        | contains(["cdylib"])
+        or contains(["dylib"])
+        or contains(["staticlib"])
+    )
+    | .filenames[]
+    | select(endswith(".rlib") | not)
+    | '"${select_non_deps_artifact}";
+    function installArtifacts () 
+    { 
+        local loc=${1?:missing};
+        mkdir -p "${loc}";
+        while IFS= read -r to_install; do
+            echo installing ${to_install} in "${loc}";
+            cp "${to_install}" "${loc}";
+        done;
+        rmdir --ignore-fail-on-non-empty "${loc}"
+    };
+    echo "${logs}" | /nix/store/2n9hfcfqdszxgsmi4qyqq6rv947dwwg9-jq-1.8.0-bin/bin/jq -r "${select_lib_files}" | installArtifacts "${dest}/lib";
+    echo "${logs}" | /nix/store/2n9hfcfqdszxgsmi4qyqq6rv947dwwg9-jq-1.8.0-bin/bin/jq -r "${select_bins}" | installArtifacts "${dest}/bin";
+    echo searching for bins/libs complete )
 }
 installPhase ()
 {
@@ -1743,6 +1968,62 @@ pkgConfigWrapper_addPkgConfigPath ()
     addToSearchPath "PKG_CONFIG_PATH${role_post}" "$1/lib/pkgconfig";
     addToSearchPath "PKG_CONFIG_PATH${role_post}" "$1/share/pkgconfig"
 }
+postBuildInstallFromCargoBuildLog ()
+{
+ 
+    ( if [ -n "${cargoBuildLog:-}" -a -f "${cargoBuildLog}" ]; then
+        installFromCargoBuildLog "${postBuildInstallFromCargoBuildLogOut}" "${cargoBuildLog}";
+    else
+        cat <<-'EOF'
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+$cargoBuildLog is either undefined or does not point to a valid file location!
+By default the installFromCargoBuildLogHook will expect that cargo's output
+was captured and can be used to determine which binaries should be installed
+(instead of just guessing based on what is present in cargo's target directory)
+
+If you are defining your own custom build step, you have two options:
+1. Set `doNotPostBuildInstallCargoBinaries = true;` and ensure the installation
+   steps are handled as appropriate.
+2. ensure that cargo's build log is captured in a file and point $cargoBuildLog at it
+
+At a minimum, the latter option can be achieved with a build phase that runs:
+     cargoBuildLog=$(mktemp cargoBuildLogXXXX.json)
+     cargo build --release --message-format json-render-diagnostics >"$cargoBuildLog"
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EOF
+
+        false;
+    fi )
+}
+prepareAndInstallCargoArtifactsDir ()
+{
+ 
+    local dir="${1:-${out}}";
+    local cargoTargetDir="${2:-${CARGO_TARGET_DIR:-target}}";
+    local mode="${3:-${installCargoArtifactsMode:-use-zstd}}";
+    local prevCargoArtifacts="${4:-${cargoArtifacts:""}}";
+    mkdir -p "${dir}";
+    case "${mode}" in 
+        "use-zstd")
+            local prevCandidateTarZst="${prevCargoArtifacts}/target.tar.zst";
+            if [ -f "${prevCandidateTarZst}" ]; then
+                local prevCargoArtifacts="${prevCandidateTarZst}";
+            fi;
+            compressAndInstallCargoArtifactsDir "${dir}" "${cargoTargetDir}" "${prevCargoArtifacts}"
+        ;;
+        "use-symlink")
+            local prevCargoTargetDir="/dev/null";
+            if [ -n "${prevCargoArtifacts}" ] && [ -d "${prevCargoArtifacts}/target" ]; then
+                local prevCargoTargetDir="${prevCargoArtifacts}/target";
+            fi;
+            dedupAndInstallCargoArtifactsDir "${dir}" "${cargoTargetDir}" "${prevCargoTargetDir}"
+        ;;
+        *)
+            echo "unknown mode: \"${mode}\"";
+            false
+        ;;
+    esac
+}
 prependToVar ()
 {
  
@@ -1800,6 +2081,45 @@ recordPropagatedDependencies ()
         mkdir -p "${!outputDev}/nix-support";
         printWords ${!propagatedInputsSlice} > "${!outputDev}/nix-support/$propagatedInputsFile";
     done
+}
+removeReferencesToRustToolchain ()
+{
+ 
+    local installLocation="${1:-${out:?not defined}}";
+    echo "stripping references to Rust toolchain";
+    local rustToolchainLocation rustToolchainStoreHash;
+    rustToolchainLocation=$(rustc --print sysroot);
+    echo "Rust toolchain at: $rustToolchainLocation";
+    rustToolchainStoreHash=$(echo "$rustToolchainLocation" | grep --only-matching '/nix/store/[a-z0-9]\{32\}');
+    find "${installLocation}" -type f -print0 | xargs -0 --no-run-if-empty sed -i'' "s|${rustToolchainStoreHash}|/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee|g";
+    echo "stripping Rust toolchain references done"
+}
+removeReferencesToVendoredSources ()
+{
+ 
+    local installLocation="${1:-${out:?not defined}}";
+    local vendoredDir="${2:-${cargoVendorDir:?not defined}}";
+    ( exec 3>&1;
+    echo stripping references to cargoVendorDir from:;
+    find "${installLocation}" -type f -print0 | sort -z | tee -a >(tr '\0' '\n' 1>&3) | xargs -0 --no-run-if-empty sed -i'' -f <(echo -n 's!/nix/store/\(eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+( echo "${vendoredDir}"
+find -L "${vendoredDir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -I DIR find -H DIR -type l -exec readlink '{}' \; ) | grep --only-matching '/nix/store/[a-z0-9]\{32\}' | sort -u | while read crateSource; do
+    echo -n '\|'"${crateSource#/nix/store/}";
+done || true
+echo -n '\)!/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee!g');
+    echo stripping references done )
+}
+replaceCargoLock ()
+{
+ 
+    local cargoLockOverride="${1:-${cargoLock:?not defined}}";
+    if [[ -f Cargo.lock ]]; then
+        echo "moving Cargo.lock to Cargo.lock.orig, then will use ${cargoLockOverride} as Cargo.lock";
+        mv Cargo.lock Cargo.lock.orig;
+    else
+        echo "will use ${cargoLockOverride} as Cargo.lock";
+    fi;
+    cp --no-preserve=ownership,mode "${cargoLock}" Cargo.lock
 }
 runHook ()
 {
