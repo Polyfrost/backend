@@ -38,7 +38,8 @@
                 backend = cranePackage;
             };
             devShells.default = craneLib.devShell {
-                packages = cranePackage.nativeBuildInputs; # Add all build-time dependencies to the environment
+                # Add all build-time dependencies to the environment
+                packages = cranePackage.buildInputs ++ cranePackage.nativeBuildInputs;
             };
         });
 }
