@@ -114,7 +114,7 @@ async fn oneconfig(
 		Err(e) => {
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
-				.body(format!("Error fetching latest oneconfig version: {e}"));
+				.body(format!("Error fetching latest oneconfig version: {e:?}"));
 		}
 	};
 

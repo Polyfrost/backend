@@ -1,4 +1,4 @@
-FROM clux/muslrust:stable AS chef
+FROM docker.io/clux/muslrust:stable AS chef
 
 USER root
 RUN cargo install cargo-chef
@@ -20,7 +20,7 @@ COPY . .
 
 RUN rustup target add x86_64-unknown-linux-musl && cargo build --release --target x86_64-unknown-linux-musl
 
-FROM alpine AS runtime
+FROM docker.io/alpine AS runtime
 RUN addgroup -S polyfrost && adduser -S polyfrost -G polyfrost
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/backend /usr/local/bin/
 USER polyfrost
