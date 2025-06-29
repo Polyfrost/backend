@@ -6,7 +6,6 @@ use actix_web::{
 	HttpResponse,
 	Responder
 };
-use itertools::Itertools as _;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
@@ -19,16 +18,13 @@ use crate::{
 	types::gradle_module_metadata::{
 		ArtifactSelector,
 		Dependency,
-		GradleModuleMetadata,
 		ThirdPartyCompatibility,
 		Variant,
 		VersionRequirement
 	}
 };
 
-const POLYFROST_GROUP: &str = "org.polyfrost";
 const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
-const OMNICORE_GROUP: &str = "dev.deftu";
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	|config| {
@@ -134,7 +130,7 @@ async fn oneconfig(
 		version = latest_oneconfig_version,
 	);
 
-	let checksum = match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await
+	let oneconfig_checksum = match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await
 	{
 		Ok(checksum) => checksum,
 		Err(e) => {
@@ -143,6 +139,7 @@ async fn oneconfig(
 				.body(format!("Error fetching checksum for oneconfig: {e}"));
 		}
 	};
+
 
 	artifacts.push(ArtifactResponse {
 		group: ONECONFIG_GROUP.to_string(),
@@ -153,7 +150,7 @@ async fn oneconfig(
 		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
-			hash: checksum
+			hash: oneconfig_checksum
 		},
 		url: latest_oneconfig_url
 	});
@@ -182,186 +179,49 @@ async fn oneconfig(
 			));
 	};
 
-	let mut bundles = Vec::<GradleModuleMetadata>::with_capacity(4);
+	let mut join_set: JoinSet<Result<ArtifactResponse, anyhow::Error>> = JoinSet::new();
+	let internal_maven_url = state
+		.internal_maven_url
+		.clone()
+		.unwrap_or(state.public_maven_url.clone());
+
 	for variant in dependency.variants {
-		let Variant::RuntimeElements { dependencies } = variant else {
+		let Variant::OneConfigModulesApiElements { dependencies } = variant else {
 			continue;
 		};
+
 		for dep in dependencies {
-			if !dep.group.starts_with(ONECONFIG_GROUP) {
+			if !dep.attributes.loader_include {
 				continue;
 			}
 
-			if dep.module == "bundled" {
-				let Ok(metadata) = maven::fetch_module_metadata(
-					&state,
-					repository,
-					&dep.group,
-					&dep.module,
-					&dep.version.requires
-				)
-				.await
-				else {
-					return HttpResponse::InternalServerError()
-						.content_type("text/plain")
-						.body(format!(
-							"Error resolving dependency {}:{}:{}",
-							dep.group, dep.module, dep.version.requires
-						));
-				};
-				bundles.push(metadata);
-			} else {
-				let internal_dep_url = maven::get_dep_url(
-					&state
-						.internal_maven_url
-						.clone()
-						.unwrap_or(state.public_maven_url.clone()),
-					repository,
-					&dep
-				);
-				let dep_url =
-					maven::get_dep_url(&state.public_maven_url, repository, &dep);
-				let client = state.client.clone();
-				let checksum = async move {
-					maven::fetch_checksum(&client, &internal_dep_url).await
-				};
+			let internal_dep_url = maven::get_dep_url(&internal_maven_url, repository, &dep);
+			let dep_url = maven::get_dep_url(&state.public_maven_url, repository, &dep);
 
-				let checksum = checksum.await;
-				match checksum {
-					Ok(checksum) => artifacts.push(ArtifactResponse {
-						name: dep.module.clone(),
-						group: dep.group,
-						jij: false,
-						checksum: Checksum {
-							r#type: ChecksumType::Sha256,
-							hash: checksum
-						},
-						url: dep_url
-					}),
-					Err(e) =>
-						return HttpResponse::InternalServerError()
-							.content_type("text/plain")
-							.body(format!("Error resolving dependency {e}")),
-				}
-			}
+			let client = state.client.clone();
+			join_set.spawn(async move {
+				Ok(ArtifactResponse {
+					name: dep.module.clone(),
+					group: dep.group,
+					jij: dep.attributes.jij,
+					checksum: Checksum {
+						r#type: ChecksumType::Sha256,
+						hash: maven::fetch_checksum(&client, &internal_dep_url).await?
+					},
+					url: dep_url
+				})
+			});
 		}
 	}
 
-	// Takes the bundles, resolves all their relevant dependencies, and concurrently
-	// resolves all checksums
-	let bundles_dependencies_result = bundles
-        .into_iter()
-        // Resolve all relevant dependencies of the bundles
-        .flat_map(|b| b.variants)
-        .filter_map(|v| match v {
-            Variant::RuntimeElements { dependencies } => Some(dependencies),
-            _ => None,
-        })
-        .flatten()
-        .filter(|d| d.group.starts_with(POLYFROST_GROUP))
-        .unique()
-        // Concurrently resolve all checksums
-        .map(|dep| {
-            let internal_dep_url = maven::get_dep_url(
-                &state
-                    .internal_maven_url
-                    .clone()
-                    .unwrap_or(state.public_maven_url.clone()),
-                repository,
-                &dep,
-            );
-			let dep_url = maven::get_dep_url(
-                &state.public_maven_url,
-                repository,
-                &dep,
-            );
-            let client = state.client.clone();
-            async move {
-				(
-					dep,
-					maven::fetch_checksum(&client, &internal_dep_url).await,
-					dep_url
-				)
-			}
-        })
-        .fold(JoinSet::new(), |mut acc, future| {
-            acc.spawn(future);
-            acc
-        })
-        .join_all()
-        .await
-        .into_iter()
-        .map(|(dep, checksum, dep_url)| {
-            Ok::<_, MavenError>(ArtifactResponse {
-                name: dep.module.clone(),
-                group: dep.group,
-				jij: false,
-                checksum: Checksum {
-					r#type: ChecksumType::Sha256,
-					hash: checksum?
-				},
-                url: dep_url,
-            })
-        })
-        .try_collect();
-
-	match bundles_dependencies_result {
-		Ok(mut deps) => artifacts.append(&mut deps),
-		Err(e) =>
-			return HttpResponse::InternalServerError()
+	// Wait for all deps to be resolved
+	while let Some(Ok(dep)) = join_set.join_next().await {
+		match dep {
+			Ok(artifact) => artifacts.push(artifact),
+			Err(e) => return HttpResponse::InternalServerError()
 				.content_type("text/plain")
-				.body(format!("Error resolving dependency {e}")),
-	}
-
-	let omnicore = fetch_omnicore_response(
-		&state,
-		query.snapshots,
-		&query.version_info.version,
-		&query.version_info.loader.to_string()
-	)
-	.await;
-
-	match omnicore {
-		Ok(omnicore) => artifacts.push(omnicore),
-		Err(e) =>
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error resolving omnicore {e}")),
-	}
-
-	let minecraft_version = query.version_info.version.clone();
-	if (minecraft_version == "1.8.9" || minecraft_version == "1.12.2")
-		&& query.version_info.loader == ModLoader::Forge
-	{
-		let latest_oneconfig_legacy_dependencies_url = format!(
-			"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.\
-			 jar",
-			maven_url = state.public_maven_url,
-			group = (ONECONFIG_GROUP.to_string() + ".dependencies").replace('.', "/"),
-			artifact = "legacy",
-			version = latest_oneconfig_version,
-		);
-
-		let Ok(checksum) = maven::fetch_checksum(
-			&state.client,
-			&latest_oneconfig_legacy_dependencies_url
-		)
-		.await
-		else {
-			return HttpResponse::InternalServerError()
-				.body("unable to fetch checksum for legacy dependencies");
-		};
-
-		artifacts.push(ArtifactResponse {
-			group: ONECONFIG_GROUP.to_string() + ".dependencies",
-			name: "legacy".to_string(),
-			jij: true,
-			checksum: Checksum {
-				r#type: ChecksumType::Sha256,
-				hash: checksum
-			},
-			url: latest_oneconfig_legacy_dependencies_url
-		});
+				.body(format!("Error fetching checksum for dependency: {e}"))
+		}
 	}
 
 	// Convert artifacts to JSON and insert a copy into the cache
@@ -372,90 +232,6 @@ async fn oneconfig(
 	HttpResponse::Ok()
 		.content_type("application/json")
 		.body(response)
-}
-
-async fn fetch_omnicore_response(
-	state: &actix_web::web::Data<ApiData>,
-	snapshots: bool,
-	version: &str,
-	loader: &str
-) -> Result<ArtifactResponse, MavenError> {
-	let repository = if snapshots { "snapshots" } else { "releases" };
-
-	let omnicore_module = format!("omnicore-{}-{}", version, loader);
-
-	// Attempt to fetch the latest artifact version, with fallback logic
-	let latest_omnicore_version = match maven::fetch_latest_artifact(
-		state,
-		repository,
-		OMNICORE_GROUP,
-		&omnicore_module
-	)
-	.await
-	{
-		Ok(version) => version,
-		Err(_) if snapshots => {
-			// Fallback to "releases" if "snapshots" fails
-			maven::fetch_latest_artifact(
-				state,
-				"releases",
-				OMNICORE_GROUP,
-				&omnicore_module
-			)
-			.await?
-		}
-		Err(e) => return Err(e)
-	};
-
-	// Build the artifact URL
-	let latest_omnicore_url = format!(
-		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
-		maven_url = state.public_maven_url,
-		repository = if snapshots { repository } else { "releases" },
-		group = OMNICORE_GROUP.replace('.', "/"),
-		artifact = omnicore_module,
-		version = latest_omnicore_version
-	);
-
-	// Attempt to fetch the checksum, with fallback logic
-	let checksum =
-		match maven::fetch_checksum(&state.client, &latest_omnicore_url).await {
-			Ok(hash) => hash,
-			Err(_) if snapshots => {
-				// If checksum fetch fails for "snapshots", try "releases"
-				let fallback_version = maven::fetch_latest_artifact(
-					state,
-					"releases",
-					OMNICORE_GROUP,
-					&omnicore_module
-				)
-				.await?;
-
-				let fallback_url = format!(
-					"{maven_url}releases/{group}/{artifact}/{version}/\
-					 {artifact}-{version}.jar",
-					maven_url = state.public_maven_url,
-					group = OMNICORE_GROUP.replace('.', "/"),
-					artifact = omnicore_module,
-					version = fallback_version
-				);
-
-				maven::fetch_checksum(&state.client, &fallback_url).await?
-			}
-			Err(_) => return Err(MavenError::NoArtifacts)
-		};
-
-	// Return the constructed ArtifactResponse
-	Ok(ArtifactResponse {
-		group: OMNICORE_GROUP.to_string(),
-		name: omnicore_module,
-		jij: false,
-		checksum: Checksum {
-			r#type: ChecksumType::Sha256,
-			hash: checksum
-		},
-		url: latest_omnicore_url
-	})
 }
 
 #[get("/{artifact:stage1|relaunch}")]
@@ -494,6 +270,7 @@ async fn platform_agnostic_artifacts(
 		version: VersionRequirement {
 			requires: latest_stage1_version.to_string()
 		},
+		attributes: Default::default(),
 		third_party_compatibility: Some(ThirdPartyCompatibility {
 			artifact_selector: Some(ArtifactSelector {
 				classifier: "all".to_string(),
