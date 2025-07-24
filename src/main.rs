@@ -1,4 +1,4 @@
-#![feature(duration_constructors_lite, let_chains)]
+#![feature(duration_constructors_lite)]
 
 mod api;
 mod maven;
@@ -6,7 +6,7 @@ mod types;
 
 use std::{net::Ipv4Addr, time::Duration};
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{App, HttpServer, web};
 use api::v1::{ApiData, CacheKey, CacheValue, ETagType};
 use clap::Parser;
 use moka::future::Cache;

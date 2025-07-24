@@ -24,9 +24,7 @@ pub enum MavenError {
 	#[error(
 		"There was a mismatch between the requested module ID or group and the response"
 	)]
-	ArtifactMismatch,
-	#[error("Unable to find any artifacts")]
-	NoArtifacts
+	ArtifactMismatch
 }
 
 #[inline]

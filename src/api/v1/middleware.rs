@@ -1,10 +1,10 @@
 use actix_web::{
+	HttpResponse,
 	body::{BoxBody, EitherBody, MessageBody},
 	dev::{ServiceRequest, ServiceResponse},
-	http::header::{HeaderValue, ETAG, IF_NONE_MATCH},
+	http::header::{ETAG, HeaderValue, IF_NONE_MATCH},
 	middleware::Next,
-	web,
-	HttpResponse
+	web
 };
 use sha2::{Digest as _, Sha256};
 

@@ -1,11 +1,11 @@
 {
-    "rust-analyzer.check.command": "clippy",
-    "cSpell.words": [
-        "actix",
-        "oneconfig",
-        "openapi",
-        "polyfrost",
-        "Reqwest",
-        "utoipa"
-    ]
+	"rust-analyzer.check.command": "clippy",
+	"cSpell.words": [
+		"actix",
+		"oneconfig",
+		"openapi",
+		"polyfrost",
+		"Reqwest",
+		"utoipa"
+	]
 }

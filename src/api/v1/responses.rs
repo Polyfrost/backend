@@ -1,4 +1,4 @@
-use actix_web::{http::StatusCode, HttpResponse, HttpResponseBuilder};
+use actix_web::{HttpResponse, HttpResponseBuilder, http::StatusCode};
 use serde::Serialize;
 
 pub mod consts {

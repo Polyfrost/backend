@@ -1,0 +1,37 @@
+name: use nix
+
+on: [push, pull_request, workflow_dispatch]
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install Nix
+              uses: cachix/install-nix-action@v31
+              with:
+                  github_access_token: ${{ secrets.GITHUB_TOKEN }}
+                  extra_nix_config: |
+                      keep-env-derivations = true
+                      keep-outputs = true
+
+            - name: Cache nix store
+              uses: nix-community/cache-nix-action@v6
+              with:
+                  primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+                  restore-prefixes-first-match: nix-${{ runner.os }}-
+                  gc-max-store-size-linux: 1G
+                  purge: true
+                  purge-prefixes: nix-${{ runner.os }}-
+                  purge-created: 0
+                  purge-last-accessed: 0
+                  purge-primary-key: never
+
+            - name: Check nix flake
+              run: |
+                  nix flake check
+
+            - name: Build backend with nix
+              run: |
+                  nix build .#backend

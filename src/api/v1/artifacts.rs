@@ -1,18 +1,18 @@
 use std::fmt::Display;
 
 use actix_web::{
-	get,
-	web::{self, ServiceConfig},
 	HttpResponse,
-	Responder
+	Responder,
+	get,
+	web::{self, ServiceConfig}
 };
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
 use crate::{
 	api::v1::{
-		responses::{consts::*, ArtifactResponse, Checksum, ChecksumType, ErrorResponse},
-		ApiData
+		ApiData,
+		responses::{ArtifactResponse, Checksum, ChecksumType, ErrorResponse, consts::*}
 	},
 	maven::{self, MavenError},
 	types::gradle_module_metadata::{
@@ -130,16 +130,15 @@ async fn oneconfig(
 		version = latest_oneconfig_version,
 	);
 
-	let oneconfig_checksum = match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await
-	{
-		Ok(checksum) => checksum,
-		Err(e) => {
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error fetching checksum for oneconfig: {e}"));
-		}
-	};
-
+	let oneconfig_checksum =
+		match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await {
+			Ok(checksum) => checksum,
+			Err(e) => {
+				return HttpResponse::InternalServerError()
+					.content_type("text/plain")
+					.body(format!("Error fetching checksum for oneconfig: {e}"));
+			}
+		};
 
 	artifacts.push(ArtifactResponse {
 		group: ONECONFIG_GROUP.to_string(),
@@ -195,7 +194,8 @@ async fn oneconfig(
 				continue;
 			}
 
-			let internal_dep_url = maven::get_dep_url(&internal_maven_url, repository, &dep);
+			let internal_dep_url =
+				maven::get_dep_url(&internal_maven_url, repository, &dep);
 			let dep_url = maven::get_dep_url(&state.public_maven_url, repository, &dep);
 
 			let client = state.client.clone();
@@ -218,9 +218,10 @@ async fn oneconfig(
 	while let Some(Ok(dep)) = join_set.join_next().await {
 		match dep {
 			Ok(artifact) => artifacts.push(artifact),
-			Err(e) => return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error fetching checksum for dependency: {e}"))
+			Err(e) =>
+				return HttpResponse::InternalServerError()
+					.content_type("text/plain")
+					.body(format!("Error fetching checksum for dependency: {e}")),
 		}
 	}
 

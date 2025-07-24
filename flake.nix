@@ -13,6 +13,7 @@
         flake-utils.lib.eachDefaultSystem (system: let
             # Initialize nixpkgs
             pkgs = nixpkgs.legacyPackages.${system};
+            inherit (pkgs) lib;
             # Setup the rust toolchain
             rust-bin = rust-overlay.lib.mkRustBin {} pkgs;
             rust' = (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
@@ -31,6 +32,10 @@
             };
             cranePackage = craneLib.buildPackage (commonArgs // {
                 cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+                meta = {
+                    mainProgram = "backend";
+                    license = lib.licenses.gpl3Plus;
+                };
             });
         in {
             packages = {
