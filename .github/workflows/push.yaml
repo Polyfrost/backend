@@ -30,10 +30,10 @@ jobs:
                   purge-primary-key: never
 
             - name: Check nix flake
-              run: nix flake check
+              run: nix -L flake check
 
             - name: Build backend with nix
-              run: nix build .#backend
+              run: nix -L build .#backend
 
             - name: Upload built nix package
               uses: actions/upload-artifact@v4
