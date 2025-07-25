@@ -1,5 +1,6 @@
-pub mod artifacts;
-pub mod middleware;
+pub mod caching;
+pub mod endpoints;
+pub mod metrics;
 pub mod responses;
 
 use std::sync::Arc;
@@ -8,8 +9,9 @@ use actix_web::{
 	http::header::HeaderMap,
 	web::{self, Bytes, ServiceConfig}
 };
-use middleware::etag_middleware;
 use moka::future::Cache;
+
+use crate::api::v1::metrics::ApiMetrics;
 
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub struct CacheKey {
@@ -34,15 +36,19 @@ pub struct ApiData {
 	/// A reqwest client to use to fetch maven data
 	pub client: Arc<reqwest::Client>,
 	/// The internal cache used to cache artifact responses.
-	pub cache: Cache<CacheKey, CacheValue>
+	pub cache: Cache<CacheKey, CacheValue>,
+	/// All the metrics objects used for encoding and recording metrics
+	pub metrics: ApiMetrics
 }
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
 	move |config| {
 		config.service(
 			web::scope("/v1")
-				.wrap(actix_web::middleware::from_fn(etag_middleware))
-				.configure(artifacts::configure())
+				.wrap(actix_web::middleware::from_fn(caching::middleware))
+				.wrap(actix_web::middleware::from_fn(metrics::middleware))
+				.configure(metrics::configure())
+				.configure(endpoints::artifacts::configure())
 		);
 	}
 }

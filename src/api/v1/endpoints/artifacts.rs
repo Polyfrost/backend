@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use actix_web::{
 	HttpResponse,
@@ -6,6 +6,7 @@ use actix_web::{
 	get,
 	web::{self, ServiceConfig}
 };
+use prometheus_client::encoding::{EncodeLabelSet, EncodeLabelValue};
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
@@ -43,6 +44,15 @@ pub enum ModLoader {
 	Fabric
 }
 
+impl EncodeLabelValue for ModLoader {
+	fn encode(
+		&self,
+		encoder: &mut prometheus_client::encoding::LabelValueEncoder
+	) -> Result<(), std::fmt::Error> {
+		encoder.write_str(&self.to_string())
+	}
+}
+
 impl Display for ModLoader {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str(match self {
@@ -52,22 +62,22 @@ impl Display for ModLoader {
 	}
 }
 
-#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 pub struct OneConfigVersionInfo {
 	/// The minecraft version to fetch artifacts for
-	version: String,
+	pub version: String,
 	/// The mod loader to fetch artifacts for
-	loader: ModLoader
+	pub loader: ModLoader
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct ArtifactQuery<V = ()> {
 	/// Whether or not to use snapshots instead of official releases
 	#[serde(default)]
-	snapshots: bool,
+	pub snapshots: bool,
 	/// Extra version information
 	#[serde(flatten)]
-	version_info: V
+	pub version_info: V
 }
 
 #[get("/oneconfig")]

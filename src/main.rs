@@ -77,7 +77,8 @@ async fn main() {
 				.unwrap_or(u32::MAX)
 			})
 			.max_capacity(/* 10 MiB */ const { 10 * 1024 * 1024 })
-			.build()
+			.build(),
+		metrics: api::v1::metrics::init_metrics()
 	});
 
 	let mut server = HttpServer::new(move || {

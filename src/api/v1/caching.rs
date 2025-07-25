@@ -10,7 +10,7 @@ use sha2::{Digest as _, Sha256};
 
 use super::{ApiData, CacheKey, CacheValue};
 
-pub async fn etag_middleware(
+pub async fn middleware(
 	service_request: ServiceRequest,
 	next: Next<impl MessageBody>
 ) -> Result<ServiceResponse<EitherBody<impl MessageBody>>, actix_web::Error> {
