@@ -30,7 +30,7 @@ jobs:
                   purge-primary-key: never
 
             - name: Check nix flake
-              run: nix -L flake check
+              run: nix -L flake check --keep-going
 
             - name: Build backend with nix
               run: nix -L build .#backend

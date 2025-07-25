@@ -7,10 +7,6 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         crane.url = "github:ipetkov/crane";
-        advisory-db = {
-            url = "github:rustsec/advisory-db";
-            flake = false;
-        };
         treefmt-nix = {
             url = "github:numtide/treefmt-nix";
             inputs.nixpkgs.follows = "nixpkgs";
@@ -24,7 +20,6 @@
             flake-utils,
             rust-overlay,
             crane,
-            advisory-db,
             treefmt-nix,
             ...
         }:
@@ -74,41 +69,17 @@
                     clippy = craneLib.cargoClippy (
                         commonArgsWithDeps // { cargoClippyExtraArgs = "--all-targets -- --deny warnings"; }
                     );
-                    deny =
-                        let
-                            git = ''HOME="$GIT_HOME" git'';
-                            gitInit = ''
-                                ${git} config --global init.defaultBranch "main"
-                                ${git} config --global user.email "example@example.com"
-                                ${git} config --global user.name "John Doe"
-                                ${git} init
-                                ${git} add -A
-                                ${git} commit -m "init"
-                            '';
-                        in
-                        craneLib.cargoDeny (
-                            commonArgs
-                            // {
-                                cargoDenyChecks = "--disable-fetch all";
-                                nativeBuildInputs = [ pkgs.git ];
-                                configurePhase = ''
-                                    runHook preConfigure
+                    deny = craneLib.cargoDeny (
+                        commonArgs
+                        // {
+                            cargoDenyChecks = "all";
 
-                                    DB_PATH="$CARGO_HOME"/advisory-dbs/advisory-db-3157b0e258782691
-                                    mkdir -p "$DB_PATH"
-
-                                    pushd "$DB_PATH"
-
-                                    ln -s ${advisory-db}/{*,.*} .
-                                    GIT_HOME="$(mktemp -d)"
-                                    ${gitInit} # Cargo-deny complains if it isn't a real repo
-
-                                    popd
-
-                                    runHook postConfigure
-                                '';
-                            }
-                        );
+                            # Used to allow network access so yanked crates and advisories can be downloaded
+                            outputHash = "sha256-pQpattmS9VmO3ZIQUFn66az8GSmB4IvYhTTCFn6SUmo=";
+                            outputHashAlgo = "sha256";
+                            outputHashMode = "recursive";
+                        }
+                    );
                     udeps = craneLib.mkCargoDerivation (
                         commonArgsWithDeps
                         // {
