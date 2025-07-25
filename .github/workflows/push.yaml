@@ -1,4 +1,4 @@
-name: use nix
+name: Build with nix
 
 on: [push, pull_request, workflow_dispatch]
 jobs:
@@ -29,9 +29,13 @@ jobs:
                   purge-primary-key: never
 
             - name: Check nix flake
-              run: |
-                  nix flake check
+              run: nix flake check
 
             - name: Build backend with nix
-              run: |
-                  nix build .#backend
+              run: nix build .#backend
+
+            - name: Upload built nix package
+              uses: actions/upload-artifact@v4
+              with:
+                  name: backend
+                  path: ./result/**/*
