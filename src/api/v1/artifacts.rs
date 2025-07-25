@@ -95,7 +95,7 @@ async fn oneconfig(
 	.await
 	{
 		Ok(v) => v,
-		Err(MavenError::Reqwest(e)) if e.status().is_some_and(|c| c == 404) =>
+		Err(MavenError::Reqwest(e)) if e.status().is_some_and(|c| c == 404) => {
 			return ErrorResponse::InvalidOneConfigVersion {
 				title: INVALID_ONECONFIG_VERSION_TITLE.to_string(),
 				detail: format!(
@@ -109,7 +109,8 @@ async fn oneconfig(
 					loader = query.version_info.loader
 				)
 			}
-			.into(),
+			.into();
+		}
 		// Err(_) => unreachable!() // TODO add Semver handling, and NoVersions
 		Err(e) => {
 			return HttpResponse::InternalServerError()
@@ -218,10 +219,11 @@ async fn oneconfig(
 	while let Some(Ok(dep)) = join_set.join_next().await {
 		match dep {
 			Ok(artifact) => artifacts.push(artifact),
-			Err(e) =>
+			Err(e) => {
 				return HttpResponse::InternalServerError()
 					.content_type("text/plain")
-					.body(format!("Error fetching checksum for dependency: {e}")),
+					.body(format!("Error fetching checksum for dependency: {e}"));
+			}
 		}
 	}
 
@@ -295,12 +297,13 @@ async fn platform_agnostic_artifacts(
 	.await
 	{
 		Ok(checksum) => checksum,
-		Err(e) =>
+		Err(e) => {
 			return HttpResponse::InternalServerError()
 				.content_type("text/plain")
 				.body(format!(
 					"Error resolving latest {artifact} version checksum: {e}"
-				)),
+				));
+		}
 	};
 
 	let response = match serde_json::to_string(&ArtifactResponse {
