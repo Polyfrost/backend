@@ -10,10 +10,8 @@ The main command that starts the backend HTTP server. The server can be configur
 Usage: backend [OPTIONS] --public-maven-url <PUBLIC_MAVEN_URL>
 
 Options:
-      --port <PORT>
-          The port for the HTTP server to listen on [env: BACKEND_LISTEN_PORT=] [default: 8080]
-      --host <HOST>
-          The host address for the HTTP server to listen on [env: BACKEND_LISTEN_HOST=] [default: 0.0.0.0]
+      --bind <BIND>
+          The addresses (IP and port) for the HTTP server to bind to [env: BACKEND_LISTEN_PORT=] [default: 0.0.0.0:8080,[::]:8080]
       --http1
           If passed, the server will be downgraded to HTTP/1.1 rather than HTTP/2 [env: BACKEND_USE_HTTP1=]
       --public-maven-url <PUBLIC_MAVEN_URL>

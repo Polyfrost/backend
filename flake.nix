@@ -46,6 +46,8 @@
                 # Add all build-time dependencies to the environment
                 packages = cranePackage.buildInputs ++ cranePackage.nativeBuildInputs ++ (with pkgs; [
                     cargo-deny
+                    evcxr
+                    lldb
                 ]);
             };
         });

@@ -4,7 +4,7 @@ mod api;
 mod maven;
 mod types;
 
-use std::{net::Ipv4Addr, time::Duration};
+use std::{net::SocketAddr, time::Duration};
 
 use actix_web::{App, HttpServer, web};
 use api::v1::{ApiData, CacheKey, CacheValue, ETagType};
@@ -18,12 +18,17 @@ use url::Url;
 #[derive(Parser, Clone)]
 #[clap(version, about, long_about = None)]
 struct AppCommand {
-	/// The port for the HTTP server to listen on
-	#[clap(long, env = "BACKEND_LISTEN_PORT", default_value_t = 8080)]
-	pub port: u16,
-	/// The host address for the HTTP server to listen on
-	#[clap(long, env = "BACKEND_LISTEN_HOST", default_value_t = Ipv4Addr::new(0, 0, 0, 0))]
-	pub host: Ipv4Addr,
+	/// The addresses (IP and port) for the HTTP server to bind to.
+	///
+	/// Multiple bind addresses can be either split by comma, or passed as
+	/// multiple flags.
+	#[clap(
+		long,
+		env = "BACKEND_LISTEN_PORT",
+		value_delimiter = ',',
+		default_value = "[::]:8080"
+	)]
+	pub bind: Vec<SocketAddr>,
 	/// If passed, the server will be downgraded to HTTP/1.1 rather than HTTP/2
 	#[clap(long, env = "BACKEND_USE_HTTP1", default_value_t = false)]
 	pub http1: bool,
@@ -46,7 +51,6 @@ async fn main() {
 	env_logger::init();
 
 	let args = AppCommand::parse();
-	let listen_args = (args.host, args.port);
 	let data = web::Data::new(ApiData {
 		internal_maven_url: args.internal_maven_url.map(|url| url.to_string()),
 		public_maven_url: args.public_maven_url.to_string(),
@@ -76,14 +80,19 @@ async fn main() {
 			.build()
 	});
 
-	HttpServer::new(move || {
+	let mut server = HttpServer::new(move || {
 		App::new()
 			.app_data(data.clone())
 			.configure(api::v1::configure())
-	})
-	.bind_auto_h2c(listen_args)
-	.expect("Unable to bind on specified IP and port")
-	.run()
-	.await
-	.expect("Unable to start HTTP server");
+	});
+
+	// Call .bind for each address, as using multiple in the same call can silently
+	// fail
+	for bind_addr in args.bind {
+		server = server
+			.bind_auto_h2c(bind_addr)
+			.expect("Unable to bind on specified address");
+	}
+
+	server.run().await.expect("Unable to start HTTP server");
 }
