@@ -3,7 +3,7 @@ pub mod endpoints;
 pub mod metrics;
 pub mod responses;
 
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use actix_web::{
 	http::header::HeaderMap,
@@ -35,10 +35,12 @@ pub struct ApiData {
 	pub internal_maven_url: Option<String>,
 	/// A reqwest client to use to fetch maven data
 	pub client: Arc<reqwest::Client>,
+	/// The allowlist of paths that should be cached
+	pub cache_allowlist: HashSet<&'static str>,
 	/// The internal cache used to cache artifact responses.
 	pub cache: Cache<CacheKey, CacheValue>,
 	/// All the metrics objects used for encoding and recording metrics
-	pub metrics: ApiMetrics
+	pub metrics: ApiMetrics,
 }
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {

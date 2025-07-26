@@ -4,7 +4,7 @@ mod api;
 mod maven;
 mod types;
 
-use std::{net::SocketAddr, time::Duration};
+use std::{collections::HashSet, net::SocketAddr, time::Duration};
 
 use actix_web::{App, HttpServer, web};
 use api::v1::{ApiData, CacheKey, CacheValue, ETagType};
@@ -66,6 +66,10 @@ async fn main() {
 			.build()
 			.unwrap()
 			.into(),
+		cache_allowlist: HashSet::from([
+			"/v1/artifacts/oneconfig",
+			"/v1/artifacts/{artifact:stage1|relaunch}"
+		]),
 		cache: Cache::builder()
 			.time_to_live(Duration::from_mins(2))
 			.weigher(|k: &CacheKey, v: &CacheValue| {
