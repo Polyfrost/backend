@@ -24,7 +24,7 @@ struct AppCommand {
 	/// multiple flags.
 	#[clap(
 		long,
-		env = "BACKEND_LISTEN_PORT",
+		env = "BACKEND_BIND_ADDRS",
 		value_delimiter = ',',
 		default_value = "[::]:8080"
 	)]
