@@ -40,7 +40,7 @@ pub struct ApiData {
 	/// The internal cache used to cache artifact responses.
 	pub cache: Cache<CacheKey, CacheValue>,
 	/// All the metrics objects used for encoding and recording metrics
-	pub metrics: ApiMetrics,
+	pub metrics: ApiMetrics
 }
 
 pub fn configure() -> impl FnOnce(&mut ServiceConfig) {

@@ -15,7 +15,9 @@ use prometheus_client::{
 };
 
 use crate::api::v1::{
-	caching::CacheLabels, endpoints::artifacts::{ArtifactQuery, OneConfigVersionInfo}, ApiData
+	ApiData,
+	caching::CacheLabels,
+	endpoints::artifacts::{ArtifactQuery, OneConfigVersionInfo}
 };
 
 /// A macro that automatically initializes and registers a metric using inferred
@@ -115,7 +117,11 @@ pub async fn middleware(
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
 	let data = service_request.extract::<web::Data<ApiData>>().await?;
 
-	match service_request.match_pattern().unwrap_or("default".to_string()).as_str() {
+	match service_request
+		.match_pattern()
+		.unwrap_or("default".to_string())
+		.as_str()
+	{
 		"/v1/artifacts/oneconfig" => {
 			data.metrics
 				.oneconfig_artifacts_requests
@@ -133,9 +139,9 @@ pub async fn middleware(
 				.get_or_create(&PlatformAgnosticArtifactLabels {
 					// Unfortunately actix makes it difficult to extract the real
 					// parsed URL parameter, so just substring instead as a substitute
-					r#type: service_request.uri().path()
-						[const { "/v1/artifacts/".len() }..]
-						.to_string()
+					r#type:
+						service_request.uri().path()[const { "/v1/artifacts/".len() }..]
+							.to_string()
 				})
 				.inc();
 		}

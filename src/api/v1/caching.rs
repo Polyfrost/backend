@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use actix_web::{
 	HttpResponse,
 	body::{BoxBody, EitherBody, MessageBody},
@@ -22,7 +20,9 @@ pub async fn middleware(
 	service_request: ServiceRequest,
 	next: Next<impl MessageBody>
 ) -> Result<ServiceResponse<EitherBody<impl MessageBody>>, actix_web::Error> {
-	let match_pattern = service_request.match_pattern().unwrap_or("default".to_string());
+	let match_pattern = service_request
+		.match_pattern()
+		.unwrap_or("default".to_string());
 	let Some(app_data) = service_request.app_data::<web::Data<ApiData>>() else {
 		// If we don't have ApiData for whatever reason, we can't do much
 		// cache-related Technically this could probably be an unwrap, but this is
@@ -42,7 +42,9 @@ pub async fn middleware(
 	}
 
 	let cache = app_data.cache.clone();
-	let metric_labels = CacheLabels { endpoint: match_pattern };
+	let metric_labels = CacheLabels {
+		endpoint: match_pattern
+	};
 	let cache_key = CacheKey {
 		path: service_request.path().to_string(),
 		query: service_request.query_string().to_string()
@@ -62,7 +64,11 @@ pub async fn middleware(
 	// Resolve cache entry with path & query
 	if let Some(cache_value) = cache.get(&cache_key).await {
 		// Record a cache hit to the metrics
-		app_data.metrics.cache_hits.get_or_create(&metric_labels).inc();
+		app_data
+			.metrics
+			.cache_hits
+			.get_or_create(&metric_labels)
+			.inc();
 
 		// Short circuit with HttpResponse::NotModified() if the If-None-Match header
 		// matches cache
@@ -96,7 +102,11 @@ pub async fn middleware(
 		return Ok(service_request.into_response(res).map_into_right_body());
 	} else {
 		// Record a cache miss to the metrics
-		app_data.metrics.cache_misses.get_or_create(&metric_labels).inc();
+		app_data
+			.metrics
+			.cache_misses
+			.get_or_create(&metric_labels)
+			.inc();
 	}
 
 	// If none of the caching cases were handled, pass through to other handlers
