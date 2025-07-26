@@ -2,18 +2,33 @@ use actix_web::{
 	HttpResponse,
 	body::{BoxBody, EitherBody, MessageBody},
 	dev::{ServiceRequest, ServiceResponse},
-	http::header::{ETAG, HeaderValue, IF_NONE_MATCH},
+	http::header::{ETAG, HeaderMap, HeaderValue, IF_NONE_MATCH},
 	middleware::Next,
-	web
+	web::{self, Bytes}
 };
 use prometheus_client::encoding::EncodeLabelSet;
 use sha2::{Digest as _, Sha256};
 
-use super::{ApiData, CacheKey, CacheValue};
+use crate::api::common::data::ApiData;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 pub struct CacheLabels {
 	endpoint: String
+}
+
+#[derive(Hash, PartialEq, Eq, Clone)]
+pub struct CacheKey {
+	pub path: String,
+	pub query: String
+}
+
+pub type ETagType = [u8; 32];
+
+#[derive(Clone)]
+pub struct CacheValue {
+	pub response: Bytes,
+	pub headers: HeaderMap,
+	pub etag: ETagType
 }
 
 pub async fn middleware(
@@ -66,6 +81,7 @@ pub async fn middleware(
 		// Record a cache hit to the metrics
 		app_data
 			.metrics
+			.global
 			.cache_hits
 			.get_or_create(&metric_labels)
 			.inc();
@@ -104,6 +120,7 @@ pub async fn middleware(
 		// Record a cache miss to the metrics
 		app_data
 			.metrics
+			.global
 			.cache_misses
 			.get_or_create(&metric_labels)
 			.inc();

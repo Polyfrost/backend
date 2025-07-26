@@ -4,7 +4,7 @@ use semver::Version;
 use thiserror::Error;
 
 use crate::{
-	api::v1::ApiData,
+	api::common::data::ApiData,
 	types::{
 		gradle_module_metadata::{Dependency, GradleModuleMetadata},
 		maven_metadata::MavenMetadata
@@ -65,10 +65,7 @@ pub async fn fetch_maven_metadata(
 		.client
 		.get(format!(
 			"{url}{repository}/{group}/{artifact}/maven-metadata.xml",
-			url = state
-				.internal_maven_url
-				.clone()
-				.unwrap_or(state.public_maven_url.clone()),
+			url = state.internal_maven_url,
 			group = group.replace('.', "/")
 		))
 		.send()
@@ -124,10 +121,7 @@ pub async fn fetch_module_metadata(
 		.client
 		.get(format!(
 			"{url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.module",
-			url = state
-				.internal_maven_url
-				.clone()
-				.unwrap_or(state.public_maven_url.clone()),
+			url = state.internal_maven_url,
 			group = group.replace('.', "/")
 		))
 		.send()

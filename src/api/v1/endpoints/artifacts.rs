@@ -11,9 +11,15 @@ use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
 use crate::{
-	api::v1::{
-		ApiData,
-		responses::{ArtifactResponse, Checksum, ChecksumType, ErrorResponse, consts::*}
+	api::{
+		common::data::ApiData,
+		v1::responses::{
+			ArtifactResponse,
+			Checksum,
+			ChecksumType,
+			ErrorResponse,
+			consts::*
+		}
 	},
 	maven::{self, MavenError},
 	types::gradle_module_metadata::{
@@ -27,14 +33,12 @@ use crate::{
 
 const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
 
-pub fn configure() -> impl FnOnce(&mut ServiceConfig) {
-	|config| {
-		config.service(
-			web::scope("/artifacts")
-				.service(oneconfig)
-				.service(platform_agnostic_artifacts)
-		);
-	}
+pub fn configure(config: &mut ServiceConfig) {
+	config.service(
+		web::scope("/artifacts")
+			.service(oneconfig)
+			.service(platform_agnostic_artifacts)
+	);
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
@@ -190,10 +194,6 @@ async fn oneconfig(
 	};
 
 	let mut join_set: JoinSet<Result<ArtifactResponse, anyhow::Error>> = JoinSet::new();
-	let internal_maven_url = state
-		.internal_maven_url
-		.clone()
-		.unwrap_or(state.public_maven_url.clone());
 
 	for variant in dependency.variants {
 		let Variant::OneConfigModulesApiElements { dependencies } = variant else {
@@ -206,7 +206,7 @@ async fn oneconfig(
 			}
 
 			let internal_dep_url =
-				maven::get_dep_url(&internal_maven_url, repository, &dep);
+				maven::get_dep_url(&state.internal_maven_url, repository, &dep);
 			let dep_url = maven::get_dep_url(&state.public_maven_url, repository, &dep);
 
 			let client = state.client.clone();
@@ -295,14 +295,7 @@ async fn platform_agnostic_artifacts(
 
 	let checksum = match maven::fetch_checksum(
 		&state.client,
-		&maven::get_dep_url(
-			&state
-				.internal_maven_url
-				.clone()
-				.unwrap_or(state.public_maven_url.clone()),
-			repository,
-			&dep
-		)
+		&maven::get_dep_url(&state.internal_maven_url, repository, &dep)
 	)
 	.await
 	{

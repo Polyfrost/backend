@@ -4,20 +4,20 @@ mod api;
 mod maven;
 mod types;
 
-use std::{collections::HashSet, net::SocketAddr, time::Duration};
+use std::net::SocketAddr;
 
 use actix_web::{App, HttpServer, web};
-use api::v1::{ApiData, CacheKey, CacheValue, ETagType};
 use clap::Parser;
-use moka::future::Cache;
 use url::Url;
+
+use crate::api::common::data::ApiData;
 
 /// The main command that starts the backend HTTP server. The server can be
 /// configured either with flags or environment variables, listed in the help
 /// message.
 #[derive(Parser, Clone)]
 #[clap(version, about, long_about = None)]
-struct AppCommand {
+pub struct AppCommand {
 	/// The addresses (IP and port) for the HTTP server to bind to.
 	///
 	/// Multiple bind addresses can be either split by comma, or passed as
@@ -51,44 +51,16 @@ async fn main() {
 	env_logger::init();
 
 	let args = AppCommand::parse();
-	let data = web::Data::new(ApiData {
-		internal_maven_url: args.internal_maven_url.map(|url| url.to_string()),
-		public_maven_url: args.public_maven_url.to_string(),
-		client: reqwest::ClientBuilder::new()
-			.user_agent(concat!(
-				env!("CARGO_PKG_NAME"),
-				"/",
-				env!("CARGO_PKG_VERSION"),
-				" (",
-				env!("CARGO_PKG_REPOSITORY"),
-				")"
-			))
-			.build()
-			.unwrap()
-			.into(),
-		cache_allowlist: HashSet::from([
-			"/v1/artifacts/oneconfig",
-			"/v1/artifacts/{artifact:stage1|relaunch}"
-		]),
-		cache: Cache::builder()
-			.time_to_live(Duration::from_mins(2))
-			.weigher(|k: &CacheKey, v: &CacheValue| {
-				(k.path.len()
-					+ k.query.len() + const { std::mem::size_of::<ETagType>() }
-					+ v.response.len()
-					+ std::mem::size_of_val(&v.headers))
-				.try_into()
-				.unwrap_or(u32::MAX)
-			})
-			.max_capacity(/* 10 MiB */ const { 10 * 1024 * 1024 })
-			.build(),
-		metrics: api::v1::metrics::init_metrics()
-	});
+	let data = web::Data::new(ApiData::new(&args));
 
 	let mut server = HttpServer::new(move || {
 		App::new()
 			.app_data(data.clone())
-			.configure(api::v1::configure())
+			// .configure(api::legacy::configure)
+			.configure(api::v1::configure)
+			.configure(api::common::metrics::configure)
+			.wrap(actix_web::middleware::from_fn(api::common::caching::middleware))
+			.wrap(actix_web::middleware::from_fn(api::common::metrics::middleware))
 	});
 
 	// Call .bind for each address, as using multiple in the same call can silently
