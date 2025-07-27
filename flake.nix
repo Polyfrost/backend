@@ -34,7 +34,8 @@
                 rust' = (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml);
                 # Setup rust nix packaging
                 craneLib = (crane.mkLib pkgs).overrideToolchain (_: rust');
-                stdenvSelector = p: if p.stdenv.hostPlatform.isElf then p.stdenvAdapters.useMoldLinker p.stdenv else p.stdenv;
+                stdenvSelector =
+                    p: if p.stdenv.hostPlatform.isElf then p.stdenvAdapters.useMoldLinker p.stdenv else p.stdenv;
                 commonArgs = {
                     src = craneLib.cleanCargoSource ./.;
                     strictDeps = true;
@@ -98,23 +99,21 @@
                         }
                     );
                 };
-                devShells.default = craneLib.devShell.override {
-                    mkShell = pkgs.mkShell.override {
-                        stdenv = stdenvSelector pkgs;
-                    };
-                } {
-                    # Add all build-time dependencies to the environment
-                    packages =
-                        cranePackage.buildInputs
-                        ++ cranePackage.nativeBuildInputs
-                        ++ (with pkgs; [
-                            cargo-deny
-                            cargo-udeps
-                            evcxr
-                            lldb
-                            self.formatter.${system}
-                        ]);
-                };
+                devShells.default =
+                    craneLib.devShell.override { mkShell = pkgs.mkShell.override { stdenv = stdenvSelector pkgs; }; }
+                        {
+                            # Add all build-time dependencies to the environment
+                            packages =
+                                cranePackage.buildInputs
+                                ++ cranePackage.nativeBuildInputs
+                                ++ (with pkgs; [
+                                    cargo-deny
+                                    cargo-udeps
+                                    evcxr
+                                    lldb
+                                    self.formatter.${system}
+                                ]);
+                        };
             }
         );
 }
