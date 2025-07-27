@@ -1,8 +1,12 @@
 use actix_web::{
 	HttpResponse,
+	HttpResponseBuilder,
 	body::{BoxBody, EitherBody, MessageBody},
 	dev::{ServiceRequest, ServiceResponse},
-	http::header::{ETAG, HeaderMap, HeaderValue, IF_NONE_MATCH},
+	http::{
+		StatusCode,
+		header::{ETAG, HeaderMap, HeaderValue, IF_NONE_MATCH}
+	},
 	middleware::Next,
 	web::{self, Bytes}
 };
@@ -28,6 +32,7 @@ pub type ETagType = [u8; 32];
 pub struct CacheValue {
 	pub response: Bytes,
 	pub headers: HeaderMap,
+	pub status: StatusCode,
 	pub etag: ETagType
 }
 
@@ -103,7 +108,7 @@ pub async fn middleware(
 			return Ok(service_request.into_response(res).map_into_right_body());
 		}
 
-		let mut res = HttpResponse::Ok()
+		let mut res = HttpResponseBuilder::new(cache_value.status)
 			.append_header((
 				ETAG,
 				base16ct::lower::encode_string(cache_value.etag.as_ref())
@@ -145,13 +150,17 @@ pub async fn middleware(
 		};
 
 		let etag: [u8; 32] = Sha256::digest(&bytes).into();
-		cache
-			.insert(cache_key, CacheValue {
-				response: bytes.clone(),
-				headers: res.headers().to_owned(),
-				etag
-			})
-			.await;
+		if res.status().is_success() {
+			// Only cache successful requests to avoid caching errors
+			cache
+				.insert(cache_key, CacheValue {
+					response: bytes.clone(),
+					headers: res.headers().to_owned(),
+					status: res.status(),
+					etag
+				})
+				.await;
+		}
 
 		let etag_str = &mut [0u8; 64];
 		base16ct::lower::encode_str(&etag, etag_str)
