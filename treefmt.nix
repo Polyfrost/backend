@@ -6,7 +6,7 @@
     programs = {
         rustfmt = {
             enable = true;
-            edition = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.edition;
+            edition = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).workspace.package.edition;
         };
         nixfmt = {
             enable = true;

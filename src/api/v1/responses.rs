@@ -1,12 +1,6 @@
-use actix_web::{HttpResponse, HttpResponseBuilder, http::StatusCode};
+use actix_web::{ResponseError, http::StatusCode};
 use serde::Serialize;
-
-pub mod consts {
-	pub const INVALID_ONECONFIG_VERSION_TITLE: &str =
-		"The requested OneConfig version could not be found";
-	pub const INVALID_ONECONFIG_VERSION_INSTANCE_PREFIX: &str =
-		"https://api.polyfrost.org/v1/problems/invalid-oneconfig-version/instance";
-}
+use thiserror::Error;
 
 #[derive(Serialize)]
 pub struct ArtifactResponse {
@@ -29,24 +23,34 @@ pub enum ChecksumType {
 	Sha256
 }
 
-/// An enum of error responses following RFC9457
-#[derive(Serialize)]
-#[serde(tag = "type")]
-pub enum ErrorResponse {
-	#[serde(rename = "https://api.polyfrost.org/v1/problems/invalid-oneconfig-version")]
-	InvalidOneConfigVersion {
-		title: String,
-		detail: String,
-		instance: String
-	}
+#[derive(Debug, Error)]
+pub enum ArtifactErrorResponse {
+	#[error("unable to connect to maven: {0}")]
+	MavenFetch(#[source] reqwest::Error),
+	#[error("maven request returned non-2xx status code: {0}")]
+	MavenResponse(#[source] reqwest::Error),
+	#[error("decoding maven metadata response failed: {0}")]
+	MavenMetadataDecoding(#[source] reqwest::Error),
+	#[error("parsing maven metadata response as XML failed: {0}")]
+	MavenMetadataParsing(#[source] maven::parsing::maven::ParseError),
+	#[error("parsing gradle metadata response as JSON failed: {0}")]
+	GradleMetadataParsing(#[source] maven::parsing::gradle::ParseError),
+	#[error("maven artifact metadata contained no versions")]
+	NoArtifactVersions,
+	#[error("oneconfig dependency had no version requirement")]
+	NoDependencyVersion { group: String, artifact: String },
+	#[error("fetching checksums of dependencies panicked: {0}")]
+	ChecksumTaskFailure(#[source] tokio::task::JoinError),
+	#[error("serializing JSON response failed: {0}")]
+	ResponseSerialization(#[source] serde_json::Error)
 }
 
-impl From<ErrorResponse> for HttpResponse {
-	fn from(value: ErrorResponse) -> Self {
-		HttpResponseBuilder::new(match &value {
-			ErrorResponse::InvalidOneConfigVersion { .. } => StatusCode::NOT_FOUND
-		})
-		.content_type("application/json")
-		.json(value)
+impl ResponseError for ArtifactErrorResponse {
+	fn status_code(&self) -> StatusCode {
+		match self {
+			_ => StatusCode::INTERNAL_SERVER_ERROR
+		}
 	}
+
+	// TODO: Implement RFC9457 problem details
 }

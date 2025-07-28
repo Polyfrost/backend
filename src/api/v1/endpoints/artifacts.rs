@@ -6,32 +6,29 @@ use actix_web::{
 	get,
 	web::{self, ServiceConfig}
 };
+use maven::{
+	parsing::{GradleModuleMetadata, MavenArtifactMetadata, gradle::AttributeValue},
+	types::ArtifactCoordinate
+};
 use prometheus_client::encoding::{EncodeLabelSet, EncodeLabelValue};
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
-use crate::{
-	api::{
-		common::data::ApiData,
-		v1::responses::{
-			ArtifactResponse,
-			Checksum,
-			ChecksumType,
-			ErrorResponse,
-			consts::*
+use crate::api::{
+	common::data::ApiData,
+	v1::{
+		responses::{ArtifactErrorResponse, ArtifactResponse, Checksum, ChecksumType},
+		utils::{
+			fetch_artifact_checksum,
+			fetch_gradle_module_metadata,
+			fetch_latest_artifact_version
 		}
-	},
-	maven::{self, MavenError},
-	types::gradle_module_metadata::{
-		ArtifactSelector,
-		Dependency,
-		ThirdPartyCompatibility,
-		Variant,
-		VersionRequirement
 	}
 };
 
 const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
+const ONECONFIG_LOADER_INCLUDE_ATTRIBUTE: &str = "org.polyfrost.oneconfig.loader.include";
+const ONECONFIG_LOADER_JIJ_ATTRIBUTE: &str = "org.polyfrost.oneconfig.loader.jij";
 
 pub fn configure(config: &mut ServiceConfig) {
 	config.service(
@@ -88,163 +85,129 @@ pub struct ArtifactQuery<V = ()> {
 async fn oneconfig(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery<OneConfigVersionInfo>>
-) -> impl Responder {
+) -> Result<impl Responder, ArtifactErrorResponse> {
 	let mut artifacts = Vec::<ArtifactResponse>::new();
-	let repository = if query.snapshots {
+	let repo_suffix = if query.snapshots {
 		"snapshots"
 	} else {
 		"releases"
 	};
-	let oneconfig_variant = format!(
+	let public_repo_url = state.public_maven_url.clone() + repo_suffix;
+	let internal_repo_url = state.internal_maven_url.clone() + repo_suffix;
+
+	let oneconfig_artifact_id = format!(
 		"{}-{}",
 		query.version_info.version, query.version_info.loader
 	);
 
-	let latest_oneconfig_version = match maven::fetch_latest_artifact(
+	let latest_oneconfig_version = fetch_latest_artifact_version(
 		&state,
-		repository,
-		ONECONFIG_GROUP,
-		&oneconfig_variant
+		MavenArtifactMetadata::get_metadata_url(
+			&internal_repo_url,
+			ONECONFIG_GROUP,
+			&oneconfig_artifact_id
+		)
 	)
-	.await
-	{
-		Ok(v) => v,
-		Err(MavenError::Reqwest(e)) if e.status().is_some_and(|c| c == 404) => {
-			return ErrorResponse::InvalidOneConfigVersion {
-				title: INVALID_ONECONFIG_VERSION_TITLE.to_string(),
-				detail: format!(
-					"The requested version {oneconfig_variant} could not be found in \
-					 the requested {repository} repository"
-				),
-				instance: format!(
-					"{INVALID_ONECONFIG_VERSION_INSTANCE_PREFIX}?version={version}&\
-					 loader={loader}&repository={repository}",
-					version = query.version_info.version,
-					loader = query.version_info.loader
-				)
-			}
-			.into();
-		}
-		// Err(_) => unreachable!() // TODO add Semver handling, and NoVersions
-		Err(e) => {
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error fetching latest oneconfig version: {e:?}"));
-		}
-	};
+	.await?;
 
-	// Add oneconfig itself to the artifacts
-	let latest_oneconfig_url = format!(
-		"{maven_url}{repository}/{group}/{artifact}/{version}/{artifact}-{version}.jar",
-		maven_url = state.public_maven_url,
-		group = ONECONFIG_GROUP.replace('.', "/"),
-		artifact = format!(
-			"{}-{}",
-			query.version_info.version, query.version_info.loader
-		),
-		version = latest_oneconfig_version,
+	let oneconfig_coordinate = ArtifactCoordinate::new(
+		ONECONFIG_GROUP,
+		&oneconfig_artifact_id,
+		latest_oneconfig_version.to_string()
 	);
 
-	let oneconfig_checksum =
-		match maven::fetch_checksum(&state.client, &latest_oneconfig_url).await {
-			Ok(checksum) => checksum,
-			Err(e) => {
-				return HttpResponse::InternalServerError()
-					.content_type("text/plain")
-					.body(format!("Error fetching checksum for oneconfig: {e}"));
-			}
-		};
-
+	// Add oneconfig itself to the artifacts
 	artifacts.push(ArtifactResponse {
 		group: ONECONFIG_GROUP.to_string(),
-		name: format!(
-			"{}-{}",
-			query.version_info.version, query.version_info.loader
-		),
-		jij: false,
+		name: oneconfig_coordinate.artifact_id().to_owned(),
+		url: oneconfig_coordinate.to_artifact_url(&public_repo_url),
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
-			hash: oneconfig_checksum
+			hash: fetch_artifact_checksum(
+				&state,
+				&oneconfig_coordinate.to_sha256_url(&internal_repo_url)
+			)
+			.await?
 		},
-		url: latest_oneconfig_url
+		jij: false
 	});
 
-	// Resolve all relevant dependency bundles of the proper oneconfig version
-	let Ok(dependency) = maven::fetch_module_metadata(
-		&state,
-		repository,
-		ONECONFIG_GROUP,
-		&format!(
-			"{}-{}",
-			query.version_info.version, query.version_info.loader
-		),
-		&latest_oneconfig_version.to_string()
-	)
-	.await
-	else {
-		return HttpResponse::InternalServerError()
-			.content_type("text/plain")
-			.body(format!(
-				"Error fetching module metadata for {}:{}-{}:{}",
-				ONECONFIG_GROUP,
-				query.version_info.version,
-				query.version_info.loader,
-				latest_oneconfig_version
-			));
-	};
+	// Fetch all dependencies of OneConfig with the
+	// "org.polyfrost.oneconfig.loader.include" property
 
-	let mut join_set: JoinSet<Result<ArtifactResponse, anyhow::Error>> = JoinSet::new();
+	let gradle_metadata =
+		fetch_gradle_module_metadata(&state, &internal_repo_url, &oneconfig_coordinate)
+			.await?;
+	let gradle_metadata = GradleModuleMetadata::parse_from_str(&gradle_metadata)
+		.map_err(ArtifactErrorResponse::GradleMetadataParsing)?;
 
-	for variant in dependency.variants {
-		let Variant::OneConfigModulesApiElements { dependencies } = variant else {
+	let mut join_set: JoinSet<Result<ArtifactResponse, ArtifactErrorResponse>> =
+		JoinSet::new();
+
+	for variant in gradle_metadata.variants {
+		if variant.name != "oneConfigModulesApiElements" {
 			continue;
-		};
+		}
 
-		for dep in dependencies {
-			if !dep.attributes.loader_include {
+		for dep in variant.dependencies {
+			if !matches!(
+				dep.attributes.get(ONECONFIG_LOADER_INCLUDE_ATTRIBUTE),
+				Some(AttributeValue::Boolean(true))
+			) {
 				continue;
 			}
 
-			let internal_dep_url =
-				maven::get_dep_url(&state.internal_maven_url, repository, &dep);
-			let dep_url = maven::get_dep_url(&state.public_maven_url, repository, &dep);
+			// Take the version requirement in order of constraint strength
+			let Some(version) = dep
+				.version
+				.and_then(|v| v.strictly.or(v.requires).or(v.prefers))
+			else {
+				return Err(ArtifactErrorResponse::NoDependencyVersion {
+					group: dep.group.into_owned(),
+					artifact: dep.module.into_owned()
+				});
+			};
+			let coordinate =
+				ArtifactCoordinate::new(dep.group.clone(), dep.module.clone(), version);
 
-			let client = state.client.clone();
+			// TODO: Clean this up
+			let artifact_url = coordinate.to_artifact_url(&public_repo_url);
+			let checksum_url = coordinate.to_sha256_url(&internal_repo_url);
+			let name = dep.module.into_owned();
+			let group = dep.group.into_owned();
+			let jij = matches!(
+				dep.attributes.get(ONECONFIG_LOADER_JIJ_ATTRIBUTE),
+				Some(AttributeValue::Boolean(true))
+			);
+			let state = state.clone();
 			join_set.spawn(async move {
 				Ok(ArtifactResponse {
-					name: dep.module.clone(),
-					group: dep.group,
-					jij: dep.attributes.jij,
+					name,
+					group,
+					jij,
+					url: artifact_url,
 					checksum: Checksum {
 						r#type: ChecksumType::Sha256,
-						hash: maven::fetch_checksum(&client, &internal_dep_url).await?
-					},
-					url: dep_url
+						hash: fetch_artifact_checksum(&state, &checksum_url).await?
+					}
 				})
 			});
 		}
 	}
 
 	// Wait for all deps to be resolved
-	while let Some(Ok(dep)) = join_set.join_next().await {
-		match dep {
-			Ok(artifact) => artifacts.push(artifact),
-			Err(e) => {
-				return HttpResponse::InternalServerError()
-					.content_type("text/plain")
-					.body(format!("Error fetching checksum for dependency: {e}"));
-			}
-		}
+	while let Some(next) = join_set.join_next().await {
+		let task_result = next.map_err(ArtifactErrorResponse::ChecksumTaskFailure)?;
+
+		artifacts.push(task_result?);
 	}
 
-	// Convert artifacts to JSON and insert a copy into the cache
-	let Ok(response) = serde_json::to_string(&artifacts) else {
-		return HttpResponse::InternalServerError().body("huh");
-	};
+	let res = HttpResponse::Ok().content_type("application/json").body(
+		serde_json::to_string(&artifacts)
+			.map_err(ArtifactErrorResponse::ResponseSerialization)?
+	);
 
-	HttpResponse::Ok()
-		.content_type("application/json")
-		.body(response)
+	Ok(res)
 }
 
 #[get("/{artifact:stage1|relaunch}")]
@@ -252,82 +215,52 @@ async fn platform_agnostic_artifacts(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery>,
 	path: web::Path<(String,)>
-) -> impl Responder {
-	let artifact = path.into_inner().0;
-	let repository = if query.snapshots {
+) -> Result<impl Responder, ArtifactErrorResponse> {
+	let artifact_id = path.into_inner().0;
+	let repo_suffix = if query.snapshots {
 		"snapshots"
 	} else {
 		"releases"
 	};
-	// Fetch the latest artifact version
-	let latest_stage1_version = match maven::fetch_latest_artifact(
+	let public_repo_url = state.public_maven_url.clone() + repo_suffix;
+	let internal_repo_url = state.internal_maven_url.clone() + repo_suffix;
+
+	let latest_version = fetch_latest_artifact_version(
 		&state,
-		repository,
-		ONECONFIG_GROUP,
-		&artifact
+		MavenArtifactMetadata::get_metadata_url(
+			&internal_repo_url,
+			ONECONFIG_GROUP,
+			&artifact_id
+		)
 	)
-	.await
-	{
-		Ok(latest) => latest,
-		Err(e) => {
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error resolving latest {artifact} version: {e}"));
-		}
-	};
+	.await?;
 
 	// Resolve URL and checksum
-	let dep = Dependency {
-		group: ONECONFIG_GROUP.to_string(),
-		module: artifact.clone(),
-		version: VersionRequirement {
-			requires: latest_stage1_version.to_string()
-		},
-		attributes: Default::default(),
-		third_party_compatibility: Some(ThirdPartyCompatibility {
-			artifact_selector: Some(ArtifactSelector {
-				classifier: "all".to_string(),
-				extension: "jar".to_string(),
-				name: artifact.clone()
-			})
-		})
-	};
-
-	let checksum = match maven::fetch_checksum(
-		&state.client,
-		&maven::get_dep_url(&state.internal_maven_url, repository, &dep)
+	let artifact = ArtifactCoordinate::new(
+		ONECONFIG_GROUP,
+		&artifact_id,
+		latest_version.to_string()
 	)
-	.await
-	{
-		Ok(checksum) => checksum,
-		Err(e) => {
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!(
-					"Error resolving latest {artifact} version checksum: {e}"
-				));
-		}
-	};
+	.with_classifier("all");
 
-	let response = match serde_json::to_string(&ArtifactResponse {
-		name: artifact.clone(),
+	let checksum =
+		fetch_artifact_checksum(&state, &artifact.to_sha256_url(&internal_repo_url))
+			.await?;
+
+	let response = ArtifactResponse {
+		url: artifact.to_artifact_url(public_repo_url),
+		name: artifact_id,
 		group: ONECONFIG_GROUP.to_string(),
 		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
 			hash: checksum
-		},
-		url: maven::get_dep_url(&state.public_maven_url, repository, &dep)
-	}) {
-		Ok(response) => response,
-		Err(e) => {
-			return HttpResponse::InternalServerError()
-				.content_type("text/plain")
-				.body(format!("Error constructing latest {artifact} version: {e}"));
 		}
 	};
+	let response = HttpResponse::Ok().content_type("application/json").body(
+		serde_json::to_string(&response)
+			.map_err(ArtifactErrorResponse::ResponseSerialization)?
+	);
 
-	HttpResponse::Ok()
-		.content_type("application/json")
-		.body(response)
+	Ok(response)
 }

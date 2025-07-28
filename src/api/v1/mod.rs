@@ -1,6 +1,7 @@
 pub mod endpoints;
 pub mod metrics;
 pub mod responses;
+pub mod utils;
 
 use actix_web::web::{self, ServiceConfig};
 

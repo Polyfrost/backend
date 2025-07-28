@@ -109,6 +109,7 @@
                                 ++ (with pkgs; [
                                     cargo-deny
                                     cargo-udeps
+                                    cargo-nextest
                                     evcxr
                                     lldb
                                     self.formatter.${system}

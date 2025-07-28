@@ -1,8 +1,6 @@
-#![feature(duration_constructors_lite)]
+#![feature(duration_constructors_lite, try_blocks)]
 
 mod api;
-mod maven;
-mod types;
 
 use std::net::SocketAddr;
 
