@@ -44,7 +44,6 @@ pub struct AppCommand {
 }
 
 #[tokio::main]
-#[allow(clippy::needless_return)] // Clippy seems to be hallucinating a return statement at the end of main()
 async fn main() {
 	env_logger::init();
 
@@ -54,11 +53,15 @@ async fn main() {
 	let mut server = HttpServer::new(move || {
 		App::new()
 			.app_data(data.clone())
-			// .configure(api::legacy::configure)
+			.configure(api::legacy::configure)
 			.configure(api::v1::configure)
 			.configure(api::common::metrics::configure)
-			.wrap(actix_web::middleware::from_fn(api::common::caching::middleware))
-			.wrap(actix_web::middleware::from_fn(api::common::metrics::middleware))
+			.wrap(actix_web::middleware::from_fn(
+				api::common::caching::middleware
+			))
+			.wrap(actix_web::middleware::from_fn(
+				api::common::metrics::middleware
+			))
 	});
 
 	// Call .bind for each address, as using multiple in the same call can silently

@@ -46,11 +46,7 @@ pub enum ArtifactErrorResponse {
 }
 
 impl ResponseError for ArtifactErrorResponse {
-	fn status_code(&self) -> StatusCode {
-		match self {
-			_ => StatusCode::INTERNAL_SERVER_ERROR
-		}
-	}
+	fn status_code(&self) -> StatusCode { StatusCode::INTERNAL_SERVER_ERROR }
 
 	// TODO: Implement RFC9457 problem details
 }

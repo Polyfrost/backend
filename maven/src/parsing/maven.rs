@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
 pub type ParseError = quick_xml::DeError;
+pub type Timestamp = DateTime<Utc>;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
