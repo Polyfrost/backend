@@ -52,13 +52,19 @@ async fn main() {
 
 	let mut server = HttpServer::new(move || {
 		App::new()
+			// Register app state
 			.app_data(data.clone())
+			// Register legacy routes and middleware
 			.configure(api::legacy::configure)
+			.wrap(actix_web::middleware::from_fn(api::legacy::metrics::middleware))
+			// Register v1 routes and middleware
 			.configure(api::v1::configure)
-			.configure(api::common::metrics::configure)
+			// Register caching middleware
 			.wrap(actix_web::middleware::from_fn(
 				api::common::caching::middleware
 			))
+			// Register metrics routes and middleware
+			.configure(api::common::metrics::configure)
 			.wrap(actix_web::middleware::from_fn(
 				api::common::metrics::middleware
 			))

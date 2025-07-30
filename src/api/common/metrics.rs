@@ -16,6 +16,7 @@ use prometheus_client::{
 
 use crate::api::{
 	common::{caching::CacheLabels, data::ApiData},
+	legacy::metrics::ApiLegacyMetrics,
 	v1::metrics::ApiV1Metrics
 };
 
@@ -50,6 +51,8 @@ pub struct AppMetrics {
 	pub registry: Registry,
 	/// All of the global (application-wide) metrics
 	pub global: GlobalMetrics,
+	/// All of the legacy API metrics
+	pub legacy: ApiLegacyMetrics,
 	/// All of the API v1 metrics
 	pub v1: ApiV1Metrics
 }
@@ -60,6 +63,7 @@ impl AppMetrics {
 
 		AppMetrics {
 			global: GlobalMetrics::init_metrics(&mut registry),
+			legacy: ApiLegacyMetrics::init_metrics(&mut registry),
 			v1: ApiV1Metrics::init_metrics(&mut registry),
 			registry
 		}
