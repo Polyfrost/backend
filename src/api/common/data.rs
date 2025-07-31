@@ -44,6 +44,7 @@ impl ApiData {
 				.unwrap()
 				.into(),
 			cache_allowlist: HashSet::from([
+				"/oneconfig/{version}-{loader}",
 				"/v1/artifacts/oneconfig",
 				"/v1/artifacts/{artifact:stage1|relaunch}"
 			]),
