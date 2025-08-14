@@ -62,11 +62,27 @@
                 # Setup treefmt-nix
                 treefmtModule = import ./treefmt.nix { inherit rust'; };
                 treefmtEval = treefmt-nix.lib.evalModule pkgs treefmtModule;
+                # Construct docker image
+                dockerImage = pkgs.dockerTools.buildImage {
+                    name = "polyfrost/backend";
+                    tag = null;
+                    copyToRoot = pkgs.buildEnv {
+                        name = "image-root";
+                        paths = [ cranePackage ];
+                        pathsToLink = [ "/bin" ];
+                    };
+                    config = {
+                        Cmd = [ "/bin/${cranePackage.meta.mainProgram}" ];
+                    };
+                    uid = 1000;
+                    gid = 1000;
+                };
             in
             {
                 packages = {
                     default = self.packages.${system}.backend;
                     backend = cranePackage;
+                    backend-docker = dockerImage;
                 };
                 formatter = treefmtEval.config.build.wrapper;
                 checks = {
