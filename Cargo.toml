@@ -38,7 +38,3 @@ sha2 = "0.11.0-rc.0"
 thiserror = "2.0.12"
 tokio = { version = "1.46.1", features = ["macros", "rt-multi-thread"] }
 url = { version = "2.5.4", features = ["serde"] }
-
-[patch.crates-io]
-# prometheus/client_rust#279 (causes problems with VictoriaMetrics)
-prometheus-client = { git = 'https://github.com/whamcloud/client_rust.git', branch = "spoutn1k/svelte-encoding" }

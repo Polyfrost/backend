@@ -36,7 +36,8 @@ macro_rules! make_api_metric {
 		$registry.register(
 			name_str,
 			$metrics_struct::get_field_docs(name_str)
-				.expect(&format!("No doc comment for '{}' field", name_str)),
+				.expect(&format!("No doc comment for '{}' field", name_str))
+				.replace('\n', ""),
 			$name.clone()
 		);
 	};
