@@ -210,7 +210,7 @@ async fn oneconfig(
 	Ok(res)
 }
 
-#[get("/{artifact:stage1|relaunch}")]
+#[get("/{artifact:stage1|relaunch|loader-assets}")]
 async fn platform_agnostic_artifacts(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery>,
