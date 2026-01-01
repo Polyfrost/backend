@@ -101,19 +101,6 @@
                             outputHashMode = "recursive";
                         }
                     );
-                    udeps = craneLib.mkCargoDerivation (
-                        commonArgsWithDeps
-                        // {
-                            nativeBuildInputs = [ pkgs.cargo-udeps ];
-                            pnameSuffix = "-udeps";
-                            buildPhaseCargoCommand = ''
-                                cargo --offline \
-                                    udeps \
-                                    --all-targets \
-                                    --all-features
-                            '';
-                        }
-                    );
                 };
                 devShells.default =
                     craneLib.devShell.override { mkShell = pkgs.mkShell.override { stdenv = stdenvSelector pkgs; }; }
