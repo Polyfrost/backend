@@ -9,6 +9,7 @@ use maven::{
 	types::ArtifactCoordinate,
 };
 use prometheus_client::encoding::{EncodeLabelSet, EncodeLabelValue};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tokio::task::JoinSet;
 
@@ -105,7 +106,18 @@ async fn oneconfig(
 			&oneconfig_artifact_id,
 		),
 	)
-	.await?;
+	.await;
+	let latest_oneconfig_version = if let Err(ArtifactErrorResponse::MavenResponse(e)) =
+		&latest_oneconfig_version
+		&& let Some(StatusCode::NOT_FOUND) = e.status()
+	{
+		// Downgrade maven 404s to a 404 on this api, rather than a 500 unexpected error
+		return Ok(HttpResponse::NotFound().content_type("text/plain").body(
+			"no oneconfig releases found for given loader/version/snapshots options",
+		));
+	} else {
+		latest_oneconfig_version?
+	};
 
 	let oneconfig_coordinate = ArtifactCoordinate::new(
 		ONECONFIG_GROUP,
@@ -230,7 +242,18 @@ async fn platform_agnostic_artifacts(
 			&artifact_id,
 		),
 	)
-	.await?;
+	.await;
+	let latest_version = if let Err(ArtifactErrorResponse::MavenResponse(e)) =
+		&latest_version
+		&& let Some(StatusCode::NOT_FOUND) = e.status()
+	{
+		// Downgrade maven 404s to a 404 on this api, rather than a 500 unexpected error
+		return Ok(HttpResponse::NotFound()
+			.content_type("text/plain")
+			.body("no artifact releases found for given snapshots options"));
+	} else {
+		latest_version?
+	};
 
 	// Resolve URL and checksum
 	let artifact = ArtifactCoordinate::new(
