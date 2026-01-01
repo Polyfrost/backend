@@ -7,7 +7,7 @@ use crate::api::{common::data::ApiData, v1::responses::ArtifactErrorResponse};
 
 pub async fn fetch_latest_artifact_version(
 	state: &web::Data<ApiData>,
-	url: impl IntoUrl
+	url: impl IntoUrl,
 ) -> Result<Version, ArtifactErrorResponse> {
 	let res = state
 		// Fetch metadata with HTTP
@@ -65,7 +65,7 @@ pub async fn fetch_latest_artifact_version(
 
 pub async fn fetch_artifact_checksum(
 	state: &web::Data<ApiData>,
-	checksum_url: &str
+	checksum_url: &str,
 ) -> Result<String, ArtifactErrorResponse> {
 	let res = state
 		// Fetch metadata with HTTP
@@ -88,7 +88,7 @@ pub async fn fetch_artifact_checksum(
 pub async fn fetch_gradle_module_metadata(
 	state: &web::Data<ApiData>,
 	repo_url: &str,
-	coordinate: &ArtifactCoordinate<'_>
+	coordinate: &ArtifactCoordinate<'_>,
 ) -> Result<String, ArtifactErrorResponse> {
 	let res = state
 		// Fetch metadata with HTTP

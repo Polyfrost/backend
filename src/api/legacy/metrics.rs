@@ -5,19 +5,19 @@ use actix_web::{
 	dev::{ServiceRequest, ServiceResponse},
 	http::header,
 	middleware::Next,
-	web
+	web,
 };
 use documented::DocumentedFields;
 use prometheus_client::{
 	encoding::{EncodeLabelSet, EncodeLabelValue},
 	metrics::{counter::Counter, family::Family},
-	registry::Registry
+	registry::Registry,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{
 	api::common::{data::ApiData, metrics::MetricsGroup},
-	make_api_metric
+	make_api_metric,
 };
 
 macro_rules! impl_serde_variant_as_label_value {
@@ -25,10 +25,10 @@ macro_rules! impl_serde_variant_as_label_value {
 		impl EncodeLabelValue for $enum {
 			fn encode(
 				&self,
-				encoder: &mut prometheus_client::encoding::LabelValueEncoder
+				encoder: &mut prometheus_client::encoding::LabelValueEncoder,
 			) -> Result<(), std::fmt::Error> {
 				encoder.write_str(
-					serde_variant::to_variant_name(self).map_err(|_| std::fmt::Error)?
+					serde_variant::to_variant_name(self).map_err(|_| std::fmt::Error)?,
 				)
 			}
 		}
@@ -40,14 +40,14 @@ macro_rules! impl_serde_variant_as_label_value {
 pub enum UserAgentType {
 	Loader,
 	Wrapper,
-	Unknown
+	Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 pub struct OneConfigRequest {
 	pub version: String,
 	pub loader: String,
-	pub user_agent_type: UserAgentType
+	pub user_agent_type: UserAgentType,
 }
 
 impl_serde_variant_as_label_value!(UserAgentType);
@@ -57,7 +57,7 @@ impl_serde_variant_as_label_value!(UserAgentType);
 pub struct ApiLegacyMetrics {
 	/// The amount of OneConfig requests, by version, loader, and user agent
 	/// type
-	oneconfig_requests: Family<OneConfigRequest, Counter>
+	oneconfig_requests: Family<OneConfigRequest, Counter>,
 }
 
 impl MetricsGroup for ApiLegacyMetrics {
@@ -73,7 +73,7 @@ impl MetricsGroup for ApiLegacyMetrics {
 /// A middleware to increment all metrics per-request
 pub async fn middleware(
 	mut service_request: ServiceRequest,
-	next: Next<impl MessageBody>
+	next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
 	let data = service_request.extract::<web::Data<ApiData>>().await?;
 
@@ -103,14 +103,15 @@ pub async fn middleware(
 						.and_then(|v| v.to_str().ok())
 					{
 						Some(s) if s.contains("OneConfigLoader") => UserAgentType::Loader,
-						Some(s) if s.contains("OneConfigWrapper") =>
-							UserAgentType::Wrapper,
-						Some(_) | None => UserAgentType::Unknown
-					}
+						Some(s) if s.contains("OneConfigWrapper") => {
+							UserAgentType::Wrapper
+						}
+						Some(_) | None => UserAgentType::Unknown,
+					},
 				})
 				.inc();
 		}
-		_ => ()
+		_ => (),
 	};
 
 	// Let the real request handler continue

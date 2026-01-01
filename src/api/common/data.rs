@@ -5,7 +5,7 @@ use moka::future::Cache;
 use super::caching::{CacheKey, CacheValue};
 use crate::{
 	AppCommand,
-	api::common::{caching::ETagType, metrics::AppMetrics}
+	api::common::{caching::ETagType, metrics::AppMetrics},
 };
 
 pub struct ApiData {
@@ -20,7 +20,7 @@ pub struct ApiData {
 	/// The internal cache used to cache artifact responses.
 	pub cache: Cache<CacheKey, CacheValue>,
 	/// All the metrics objects used for encoding and recording metrics
-	pub metrics: AppMetrics
+	pub metrics: AppMetrics,
 }
 
 impl ApiData {
@@ -46,7 +46,7 @@ impl ApiData {
 			cache_allowlist: HashSet::from([
 				"/oneconfig/{version}-{loader}",
 				"/v1/artifacts/oneconfig",
-				"/v1/artifacts/{artifact:stage1|relaunch}"
+				"/v1/artifacts/{artifact:stage1|relaunch}",
 			]),
 			cache: Cache::builder()
 				.time_to_live(Duration::from_mins(2))
@@ -59,7 +59,7 @@ impl ApiData {
 				})
 				.max_capacity(/* 10 MiB */ const { 10 * 1024 * 1024 })
 				.build(),
-			metrics: AppMetrics::new()
+			metrics: AppMetrics::new(),
 		}
 	}
 }

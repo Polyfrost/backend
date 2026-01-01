@@ -1,14 +1,12 @@
 use std::fmt::{Display, Write};
 
 use actix_web::{
-	HttpResponse,
-	Responder,
-	get,
-	web::{self, ServiceConfig}
+	HttpResponse, Responder, get,
+	web::{self, ServiceConfig},
 };
 use maven::{
 	parsing::{GradleModuleMetadata, MavenArtifactMetadata, gradle::AttributeValue},
-	types::ArtifactCoordinate
+	types::ArtifactCoordinate,
 };
 use prometheus_client::encoding::{EncodeLabelSet, EncodeLabelValue};
 use serde::{Deserialize, Serialize};
@@ -19,11 +17,10 @@ use crate::api::{
 	v1::{
 		responses::{ArtifactErrorResponse, ArtifactResponse, Checksum, ChecksumType},
 		utils::{
-			fetch_artifact_checksum,
-			fetch_gradle_module_metadata,
-			fetch_latest_artifact_version
-		}
-	}
+			fetch_artifact_checksum, fetch_gradle_module_metadata,
+			fetch_latest_artifact_version,
+		},
+	},
 };
 
 const ONECONFIG_GROUP: &str = "org.polyfrost.oneconfig";
@@ -34,7 +31,7 @@ pub fn configure(config: &mut ServiceConfig) {
 	config.service(
 		web::scope("/artifacts")
 			.service(oneconfig)
-			.service(platform_agnostic_artifacts)
+			.service(platform_agnostic_artifacts),
 	);
 }
 
@@ -42,13 +39,13 @@ pub fn configure(config: &mut ServiceConfig) {
 #[serde(rename_all = "lowercase")]
 pub enum ModLoader {
 	Forge,
-	Fabric
+	Fabric,
 }
 
 impl EncodeLabelValue for ModLoader {
 	fn encode(
 		&self,
-		encoder: &mut prometheus_client::encoding::LabelValueEncoder
+		encoder: &mut prometheus_client::encoding::LabelValueEncoder,
 	) -> Result<(), std::fmt::Error> {
 		encoder.write_str(&self.to_string())
 	}
@@ -58,7 +55,7 @@ impl Display for ModLoader {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str(match self {
 			Self::Fabric => "fabric",
-			Self::Forge => "forge"
+			Self::Forge => "forge",
 		})
 	}
 }
@@ -68,7 +65,7 @@ pub struct OneConfigVersionInfo {
 	/// The minecraft version to fetch artifacts for
 	pub version: String,
 	/// The mod loader to fetch artifacts for
-	pub loader: ModLoader
+	pub loader: ModLoader,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
@@ -78,13 +75,13 @@ pub struct ArtifactQuery<V = ()> {
 	pub snapshots: bool,
 	/// Extra version information
 	#[serde(flatten)]
-	pub version_info: V
+	pub version_info: V,
 }
 
 #[get("/oneconfig")]
 async fn oneconfig(
 	state: web::Data<ApiData>,
-	query: web::Query<ArtifactQuery<OneConfigVersionInfo>>
+	query: web::Query<ArtifactQuery<OneConfigVersionInfo>>,
 ) -> Result<impl Responder, ArtifactErrorResponse> {
 	let mut artifacts = Vec::<ArtifactResponse>::new();
 	let repo_suffix = if query.snapshots {
@@ -105,15 +102,15 @@ async fn oneconfig(
 		MavenArtifactMetadata::get_metadata_url(
 			&internal_repo_url,
 			ONECONFIG_GROUP,
-			&oneconfig_artifact_id
-		)
+			&oneconfig_artifact_id,
+		),
 	)
 	.await?;
 
 	let oneconfig_coordinate = ArtifactCoordinate::new(
 		ONECONFIG_GROUP,
 		&oneconfig_artifact_id,
-		latest_oneconfig_version.to_string()
+		latest_oneconfig_version.to_string(),
 	);
 
 	// Add oneconfig itself to the artifacts
@@ -125,11 +122,11 @@ async fn oneconfig(
 			r#type: ChecksumType::Sha256,
 			hash: fetch_artifact_checksum(
 				&state,
-				&oneconfig_coordinate.to_sha256_url(&internal_repo_url)
+				&oneconfig_coordinate.to_sha256_url(&internal_repo_url),
 			)
-			.await?
+			.await?,
 		},
-		jij: false
+		jij: false,
 	});
 
 	// Fetch all dependencies of OneConfig with the
@@ -164,7 +161,7 @@ async fn oneconfig(
 			else {
 				return Err(ArtifactErrorResponse::NoDependencyVersion {
 					group: dep.group.into_owned(),
-					artifact: dep.module.into_owned()
+					artifact: dep.module.into_owned(),
 				});
 			};
 			let coordinate =
@@ -188,8 +185,8 @@ async fn oneconfig(
 					url: artifact_url,
 					checksum: Checksum {
 						r#type: ChecksumType::Sha256,
-						hash: fetch_artifact_checksum(&state, &checksum_url).await?
-					}
+						hash: fetch_artifact_checksum(&state, &checksum_url).await?,
+					},
 				})
 			});
 		}
@@ -204,7 +201,7 @@ async fn oneconfig(
 
 	let res = HttpResponse::Ok().content_type("application/json").body(
 		serde_json::to_string(&artifacts)
-			.map_err(ArtifactErrorResponse::ResponseSerialization)?
+			.map_err(ArtifactErrorResponse::ResponseSerialization)?,
 	);
 
 	Ok(res)
@@ -214,7 +211,7 @@ async fn oneconfig(
 async fn platform_agnostic_artifacts(
 	state: web::Data<ApiData>,
 	query: web::Query<ArtifactQuery>,
-	path: web::Path<(String,)>
+	path: web::Path<(String,)>,
 ) -> Result<impl Responder, ArtifactErrorResponse> {
 	let artifact_id = path.into_inner().0;
 	let repo_suffix = if query.snapshots {
@@ -230,8 +227,8 @@ async fn platform_agnostic_artifacts(
 		MavenArtifactMetadata::get_metadata_url(
 			&internal_repo_url,
 			ONECONFIG_GROUP,
-			&artifact_id
-		)
+			&artifact_id,
+		),
 	)
 	.await?;
 
@@ -239,7 +236,7 @@ async fn platform_agnostic_artifacts(
 	let artifact = ArtifactCoordinate::new(
 		ONECONFIG_GROUP,
 		&artifact_id,
-		latest_version.to_string()
+		latest_version.to_string(),
 	)
 	.with_classifier("all");
 
@@ -254,12 +251,12 @@ async fn platform_agnostic_artifacts(
 		jij: false,
 		checksum: Checksum {
 			r#type: ChecksumType::Sha256,
-			hash: checksum
-		}
+			hash: checksum,
+		},
 	};
 	let response = HttpResponse::Ok().content_type("application/json").body(
 		serde_json::to_string(&response)
-			.map_err(ArtifactErrorResponse::ResponseSerialization)?
+			.map_err(ArtifactErrorResponse::ResponseSerialization)?,
 	);
 
 	Ok(response)

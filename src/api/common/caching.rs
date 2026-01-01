@@ -1,14 +1,13 @@
 use actix_web::{
-	HttpResponse,
-	HttpResponseBuilder,
+	HttpResponse, HttpResponseBuilder,
 	body::{BoxBody, EitherBody, MessageBody},
 	dev::{ServiceRequest, ServiceResponse},
 	http::{
 		StatusCode,
-		header::{ETAG, HeaderMap, HeaderValue, IF_NONE_MATCH}
+		header::{ETAG, HeaderMap, HeaderValue, IF_NONE_MATCH},
 	},
 	middleware::Next,
-	web::{self, Bytes}
+	web::{self, Bytes},
 };
 use prometheus_client::encoding::EncodeLabelSet;
 use sha2::{Digest as _, Sha256};
@@ -17,13 +16,13 @@ use crate::api::common::data::ApiData;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 pub struct CacheLabels {
-	endpoint: String
+	endpoint: String,
 }
 
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub struct CacheKey {
 	pub path: String,
-	pub query: String
+	pub query: String,
 }
 
 pub type ETagType = [u8; 32];
@@ -33,12 +32,12 @@ pub struct CacheValue {
 	pub response: Bytes,
 	pub headers: HeaderMap,
 	pub status: StatusCode,
-	pub etag: ETagType
+	pub etag: ETagType,
 }
 
 pub async fn middleware(
 	service_request: ServiceRequest,
-	next: Next<impl MessageBody>
+	next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<EitherBody<impl MessageBody>>, actix_web::Error> {
 	let match_pattern = service_request
 		.match_pattern()
@@ -63,11 +62,11 @@ pub async fn middleware(
 
 	let cache = app_data.cache.clone();
 	let metric_labels = CacheLabels {
-		endpoint: match_pattern
+		endpoint: match_pattern,
 	};
 	let cache_key = CacheKey {
 		path: service_request.path().to_string(),
-		query: service_request.query_string().to_string()
+		query: service_request.query_string().to_string(),
 	};
 
 	// Get and parse If-None-Match condition if is a valid Sha256 ETag
@@ -111,7 +110,7 @@ pub async fn middleware(
 		let mut res = HttpResponseBuilder::new(cache_value.status)
 			.append_header((
 				ETAG,
-				base16ct::lower::encode_string(cache_value.etag.as_ref())
+				base16ct::lower::encode_string(cache_value.etag.as_ref()),
 			))
 			.body(cache_value.response);
 
@@ -143,8 +142,8 @@ pub async fn middleware(
 			return Ok(ServiceResponse::new(
 				req,
 				HttpResponse::InternalServerError().body(
-					"Unable to read response bytes for caching, should never happen"
-				)
+					"Unable to read response bytes for caching, should never happen",
+				),
 			)
 			.map_into_right_body());
 		};
@@ -153,12 +152,15 @@ pub async fn middleware(
 		if res.status().is_success() {
 			// Only cache successful requests to avoid caching errors
 			cache
-				.insert(cache_key, CacheValue {
-					response: bytes.clone(),
-					headers: res.headers().to_owned(),
-					status: res.status(),
-					etag
-				})
+				.insert(
+					cache_key,
+					CacheValue {
+						response: bytes.clone(),
+						headers: res.headers().to_owned(),
+						status: res.status(),
+						etag,
+					},
+				)
 				.await;
 		}
 
@@ -170,7 +172,7 @@ pub async fn middleware(
 
 		Ok(ServiceResponse::new(
 			req,
-			res.set_body(BoxBody::new(bytes)).map_into_right_body()
+			res.set_body(BoxBody::new(bytes)).map_into_right_body(),
 		))
 	} else {
 		response.map(|v| v.map_into_left_body())

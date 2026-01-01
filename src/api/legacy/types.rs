@@ -7,19 +7,19 @@ pub enum LegacyVersion {
 	#[serde(rename = "1.8.9")]
 	OneEightNine,
 	#[serde(rename = "1.12.2")]
-	OneTwelveTwo
+	OneTwelveTwo,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum LegacyLoader {
-	Forge
+	Forge,
 }
 
 impl LegacyLoader {
 	pub fn get_loader_type(&self) -> &'static str {
 		match self {
-			LegacyLoader::Forge => "launchwrapper"
+			LegacyLoader::Forge => "launchwrapper",
 		}
 	}
 }
@@ -27,14 +27,14 @@ impl LegacyLoader {
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct LegacyArtifact {
 	pub url: String,
-	pub sha256: String
+	pub sha256: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct LegacyArtifactsResponse {
 	pub release: LegacyArtifact,
 	pub snapshot: LegacyArtifact,
-	pub loader: LegacyArtifact
+	pub loader: LegacyArtifact,
 }
 
 #[derive(Debug, Error)]
@@ -48,11 +48,13 @@ pub enum LegacyArtifactsErrorResponse {
 	#[error("decoding maven metadata response failed: {0}")]
 	MavenMetadataDecoding(#[source] reqwest::Error),
 	#[error("parsing maven metadata response as XML failed: {0}")]
-	MavenMetadataParsing(#[source] maven::parsing::maven::ParseError)
+	MavenMetadataParsing(#[source] maven::parsing::maven::ParseError),
 }
 
 impl ResponseError for LegacyArtifactsErrorResponse {
-	fn status_code(&self) -> StatusCode { StatusCode::INTERNAL_SERVER_ERROR }
+	fn status_code(&self) -> StatusCode {
+		StatusCode::INTERNAL_SERVER_ERROR
+	}
 
 	// TODO: Implement RFC9457 problem details
 }

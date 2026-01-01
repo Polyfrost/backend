@@ -1,12 +1,12 @@
 use actix_web::web;
 use maven::{
 	parsing::{MavenArtifactMetadata, maven::Timestamp},
-	types::ArtifactCoordinate
+	types::ArtifactCoordinate,
 };
 
 use crate::api::{
 	common::data::ApiData,
-	legacy::types::{LegacyArtifact, LegacyArtifactsErrorResponse}
+	legacy::types::{LegacyArtifact, LegacyArtifactsErrorResponse},
 };
 
 pub async fn get_latest_artifact(
@@ -14,7 +14,7 @@ pub async fn get_latest_artifact(
 	repository: &str,
 	group_id: &str,
 	artifact_id: &str,
-	classifier: Option<&str>
+	classifier: Option<&str>,
 ) -> Result<(LegacyArtifact, Timestamp), LegacyArtifactsErrorResponse> {
 	let internal_repository_url = state.internal_maven_url.clone() + repository;
 	let public_repository_url = state.public_maven_url.clone() + repository;
@@ -63,8 +63,8 @@ pub async fn get_latest_artifact(
 	Ok((
 		LegacyArtifact {
 			url: coordinate.to_artifact_url(&public_repository_url),
-			sha256: checksum
+			sha256: checksum,
 		},
-		parsed.versioning.last_updated
+		parsed.versioning.last_updated,
 	))
 }

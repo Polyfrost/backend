@@ -5,13 +5,11 @@ use crate::api::{
 	common::data::ApiData,
 	legacy::{
 		types::{
-			LegacyArtifactsErrorResponse,
-			LegacyArtifactsResponse,
-			LegacyLoader,
-			LegacyVersion
+			LegacyArtifactsErrorResponse, LegacyArtifactsResponse, LegacyLoader,
+			LegacyVersion,
 		},
-		utils::get_latest_artifact
-	}
+		utils::get_latest_artifact,
+	},
 };
 
 const ONECONFIG_GROUP: &str = "cc.polyfrost";
@@ -19,7 +17,7 @@ const ONECONFIG_GROUP: &str = "cc.polyfrost";
 #[get("/oneconfig/{version}-{loader}")]
 async fn oneconfig(
 	state: web::Data<ApiData>,
-	path: web::Path<(LegacyVersion, LegacyLoader)>
+	path: web::Path<(LegacyVersion, LegacyLoader)>,
 ) -> Result<impl Responder, LegacyArtifactsErrorResponse> {
 	let version = serde_variant::to_variant_name(&path.0)
 		.map_err(LegacyArtifactsErrorResponse::EnumVariantSerialization)?;
@@ -58,7 +56,7 @@ async fn oneconfig(
 	let res = HttpResponse::Ok().json(LegacyArtifactsResponse {
 		release,
 		snapshot,
-		loader
+		loader,
 	});
 
 	Ok(res)

@@ -17,7 +17,7 @@ pub struct MavenArtifactMetadata<'a> {
 	pub artifact_id: Cow<'a, str>,
 	/// Versioning information about this artifact
 	#[serde(borrow)]
-	pub versioning: ArtifactVersioning<'a>
+	pub versioning: ArtifactVersioning<'a>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -35,14 +35,14 @@ pub struct ArtifactVersioning<'a> {
 	pub versions: Vec<Cow<'a, str>>,
 	/// When the metadata was last updated
 	#[serde(deserialize_with = "crate::serde::deserialize_maven_timestamp")]
-	pub last_updated: DateTime<Utc>
+	pub last_updated: DateTime<Utc>,
 }
 
 impl<'a> MavenArtifactMetadata<'a> {
 	pub fn get_metadata_url(
 		repository_url: impl AsRef<str>,
 		group_id: impl Into<Cow<'a, str>>,
-		artifact_id: impl Into<Cow<'a, str>>
+		artifact_id: impl Into<Cow<'a, str>>,
 	) -> String {
 		let repository_url = repository_url.as_ref();
 
@@ -59,7 +59,7 @@ impl<'a> MavenArtifactMetadata<'a> {
 			group_id
 				.into()
 				.chars()
-				.map(|c| if c == '.' { '/' } else { c })
+				.map(|c| if c == '.' { '/' } else { c }),
 		);
 		url.push('/');
 
@@ -84,14 +84,14 @@ mod tests {
 			"https://repo.polyfrost.org/releases/",
 			"cc.polyfrost",
 			"oneconfig-1.8.9-forge",
-			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/maven-metadata.xml"
+			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/maven-metadata.xml",
 		),
 		(
 			"https://maven.aliucord.com/snapshots",
 			"com.aliucord",
 			"gradle",
-			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/maven-metadata.xml"
-		)
+			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/maven-metadata.xml",
+		),
 	];
 
 	#[test]

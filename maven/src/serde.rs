@@ -8,7 +8,7 @@ use serde::{Deserialize, Deserializer};
 use serde_with::{BorrowCow, serde_as};
 
 pub(crate) fn deserialize_maven_timestamp<'de, D: Deserializer<'de>>(
-	deserializer: D
+	deserializer: D,
 ) -> Result<DateTime<Utc>, D::Error> {
 	let s = Cow::<'de, str>::deserialize(deserializer)?;
 
@@ -18,7 +18,7 @@ pub(crate) fn deserialize_maven_timestamp<'de, D: Deserializer<'de>>(
 }
 
 pub(crate) fn derserialize_version_list<'de, D: Deserializer<'de>>(
-	deserializer: D
+	deserializer: D,
 ) -> Result<Vec<Cow<'de, str>>, D::Error> {
 	/// Represents
 	/// ```xml
@@ -34,7 +34,7 @@ pub(crate) fn derserialize_version_list<'de, D: Deserializer<'de>>(
 	struct VersionList<'a> {
 		#[serde(borrow, default)]
 		#[serde_as(as = "Vec<BorrowCow>")]
-		version: Vec<Cow<'a, str>>
+		version: Vec<Cow<'a, str>>,
 	}
 
 	Ok(VersionList::deserialize(deserializer)?.version)

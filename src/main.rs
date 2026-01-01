@@ -1,5 +1,3 @@
-#![feature(duration_constructors_lite, try_blocks)]
-
 mod api;
 
 use std::net::SocketAddr;
@@ -40,12 +38,15 @@ pub struct AppCommand {
 	/// same host as this backend, then this can be set to a local IP to
 	/// greatly speed up requests.
 	#[clap(long, env = "BACKEND_INTERNAL_MAVEN_URL")]
-	pub internal_maven_url: Option<Url>
+	pub internal_maven_url: Option<Url>,
 }
 
 #[tokio::main]
 async fn main() {
 	env_logger::init();
+	rustls::crypto::ring::default_provider()
+		.install_default()
+		.expect("Failed to install rustls crypto provider");
 
 	let args = AppCommand::parse();
 	let data = web::Data::new(ApiData::new(&args));

@@ -2,26 +2,26 @@ use actix_web::{
 	body::MessageBody,
 	dev::{ServiceRequest, ServiceResponse},
 	middleware::Next,
-	web
+	web,
 };
 use documented::DocumentedFields;
 use prometheus_client::{
 	encoding::EncodeLabelSet,
 	metrics::{counter::Counter, family::Family},
-	registry::Registry
+	registry::Registry,
 };
 
 use crate::{
 	api::{
 		common::{data::ApiData, metrics::MetricsGroup},
-		v1::endpoints::artifacts::{ArtifactQuery, OneConfigVersionInfo}
+		v1::endpoints::artifacts::{ArtifactQuery, OneConfigVersionInfo},
 	},
-	make_api_metric
+	make_api_metric,
 };
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 struct PlatformAgnosticArtifactLabels {
-	r#type: String
+	r#type: String,
 }
 
 /// A struct containing all of the metrics state for the API
@@ -30,7 +30,7 @@ pub struct ApiV1Metrics {
 	/// The amount of OneConfig artifacts requests, by version and loader
 	oneconfig_artifacts_requests: Family<OneConfigVersionInfo, Counter>,
 	/// The amount of platform-agnostic artifacts requests, by type
-	platform_agnostic_artifacts_requests: Family<PlatformAgnosticArtifactLabels, Counter>
+	platform_agnostic_artifacts_requests: Family<PlatformAgnosticArtifactLabels, Counter>,
 }
 
 impl MetricsGroup for ApiV1Metrics {
@@ -42,7 +42,7 @@ impl MetricsGroup for ApiV1Metrics {
 
 		Self {
 			oneconfig_artifacts_requests,
-			platform_agnostic_artifacts_requests
+			platform_agnostic_artifacts_requests,
 		}
 	}
 }
@@ -50,7 +50,7 @@ impl MetricsGroup for ApiV1Metrics {
 /// A middleware to increment all metrics per-request
 pub async fn middleware(
 	mut service_request: ServiceRequest,
-	next: Next<impl MessageBody>
+	next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
 	let data = service_request.extract::<web::Data<ApiData>>().await?;
 
@@ -67,7 +67,7 @@ pub async fn middleware(
 					&service_request
 						.extract::<web::Query<ArtifactQuery<OneConfigVersionInfo>>>()
 						.await?
-						.version_info
+						.version_info,
 				)
 				.inc();
 		}
@@ -80,11 +80,11 @@ pub async fn middleware(
 					// parsed URL parameter, so just substring instead as a substitute
 					r#type:
 						service_request.uri().path()[const { "/v1/artifacts/".len() }..]
-							.to_string()
+							.to_string(),
 				})
 				.inc();
 		}
-		_ => ()
+		_ => (),
 	};
 
 	// Let the real request handler continue

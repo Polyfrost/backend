@@ -1,23 +1,22 @@
 use actix_web::{
-	HttpResponse,
-	Responder,
+	HttpResponse, Responder,
 	body::MessageBody,
 	dev::{ServiceRequest, ServiceResponse},
 	get,
 	middleware::Next,
-	web::{self, ServiceConfig}
+	web::{self, ServiceConfig},
 };
 use documented::DocumentedFields;
 use prometheus_client::{
 	encoding::{EncodeLabelSet, text::encode},
 	metrics::{counter::Counter, family::Family},
-	registry::Registry
+	registry::Registry,
 };
 
 use crate::api::{
 	common::{caching::CacheLabels, data::ApiData},
 	legacy::metrics::ApiLegacyMetrics,
-	v1::metrics::ApiV1Metrics
+	v1::metrics::ApiV1Metrics,
 };
 
 // TODO: Improve this macro so you can use only one macro call and it will
@@ -38,7 +37,7 @@ macro_rules! make_api_metric {
 			$metrics_struct::get_field_docs(name_str)
 				.expect(&format!("No doc comment for '{}' field", name_str))
 				.replace('\n', ""),
-			$name.clone()
+			$name.clone(),
 		);
 	};
 }
@@ -55,7 +54,7 @@ pub struct AppMetrics {
 	/// All of the legacy API metrics
 	pub legacy: ApiLegacyMetrics,
 	/// All of the API v1 metrics
-	pub v1: ApiV1Metrics
+	pub v1: ApiV1Metrics,
 }
 
 impl AppMetrics {
@@ -66,7 +65,7 @@ impl AppMetrics {
 			global: GlobalMetrics::init_metrics(&mut registry),
 			legacy: ApiLegacyMetrics::init_metrics(&mut registry),
 			v1: ApiV1Metrics::init_metrics(&mut registry),
-			registry
+			registry,
 		}
 	}
 }
@@ -78,7 +77,7 @@ pub struct GlobalMetrics {
 	/// The amount of cache hits by endpoint
 	pub cache_hits: Family<CacheLabels, Counter>,
 	/// The amount of cache misses by endpoint
-	pub cache_misses: Family<CacheLabels, Counter>
+	pub cache_misses: Family<CacheLabels, Counter>,
 }
 
 impl MetricsGroup for GlobalMetrics {
@@ -90,12 +89,14 @@ impl MetricsGroup for GlobalMetrics {
 		Self {
 			api_requests,
 			cache_hits,
-			cache_misses
+			cache_misses,
 		}
 	}
 }
 
-pub fn configure(config: &mut ServiceConfig) { config.service(metrics_endpoint); }
+pub fn configure(config: &mut ServiceConfig) {
+	config.service(metrics_endpoint);
+}
 
 /// The endpoint to allow scraping metrics
 #[get("/metrics")]
@@ -115,12 +116,12 @@ async fn metrics_endpoint(state: web::Data<ApiData>) -> impl Responder {
 #[derive(Debug, Hash, PartialEq, Eq, Clone, EncodeLabelSet)]
 struct ApiRequestLabels {
 	path: String,
-	status_code: u16
+	status_code: u16,
 }
 
 pub async fn middleware(
 	mut service_request: ServiceRequest,
-	next: Next<impl MessageBody>
+	next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, actix_web::Error> {
 	let data = service_request.extract::<web::Data<ApiData>>().await?;
 
@@ -130,12 +131,12 @@ pub async fn middleware(
 	let labels = match &response {
 		Ok(r) => ApiRequestLabels {
 			path,
-			status_code: r.status().as_u16()
+			status_code: r.status().as_u16(),
 		},
 		Err(e) => ApiRequestLabels {
 			path,
-			status_code: e.as_response_error().status_code().as_u16()
-		}
+			status_code: e.as_response_error().status_code().as_u16(),
+		},
 	};
 	data.metrics
 		.global

@@ -8,19 +8,19 @@ pub struct ArtifactResponse {
 	pub name: String,
 	pub jij: bool,
 	pub checksum: Checksum,
-	pub url: String // signatures: TODO
+	pub url: String, // signatures: TODO
 }
 
 #[derive(Serialize)]
 pub struct Checksum {
 	pub r#type: ChecksumType,
-	pub hash: String
+	pub hash: String,
 }
 
 #[derive(Serialize)]
 pub enum ChecksumType {
 	#[serde(rename = "SHA-256")]
-	Sha256
+	Sha256,
 }
 
 #[derive(Debug, Error)]
@@ -42,11 +42,13 @@ pub enum ArtifactErrorResponse {
 	#[error("fetching checksums of dependencies panicked: {0}")]
 	ChecksumTaskFailure(#[source] tokio::task::JoinError),
 	#[error("serializing JSON response failed: {0}")]
-	ResponseSerialization(#[source] serde_json::Error)
+	ResponseSerialization(#[source] serde_json::Error),
 }
 
 impl ResponseError for ArtifactErrorResponse {
-	fn status_code(&self) -> StatusCode { StatusCode::INTERNAL_SERVER_ERROR }
+	fn status_code(&self) -> StatusCode {
+		StatusCode::INTERNAL_SERVER_ERROR
+	}
 
 	// TODO: Implement RFC9457 problem details
 }

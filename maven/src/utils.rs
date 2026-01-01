@@ -18,7 +18,7 @@ impl<'a> ArtifactCoordinate<'a> {
 		url.extend(
 			self.group_id
 				.chars()
-				.map(|c| if c == '.' { '/' } else { c })
+				.map(|c| if c == '.' { '/' } else { c }),
 		);
 		url.push('/');
 
@@ -59,7 +59,7 @@ impl<'a> ArtifactCoordinate<'a> {
 		url.extend(
 			self.group_id
 				.chars()
-				.map(|c| if c == '.' { '/' } else { c })
+				.map(|c| if c == '.' { '/' } else { c }),
 		);
 		url.push('/');
 
@@ -84,7 +84,7 @@ impl<'a> ArtifactCoordinate<'a> {
 	pub fn to_checksum_url(
 		&self,
 		repository_url: impl AsRef<str>,
-		format: &str
+		format: &str,
 	) -> String {
 		let mut url = self.to_artifact_url(repository_url);
 		url.push('.');
@@ -115,12 +115,12 @@ mod tests {
 				version: Cow::Borrowed("0.2.2-alpha223"),
 				base_version: Cow::Borrowed("0.2.2-alpha223"),
 				classifier: Cow::Borrowed("full"),
-				extension: Cow::Borrowed("jar")
+				extension: Cow::Borrowed("jar"),
 			},
 			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/0.2.2-alpha223/oneconfig-1.8.9-forge-0.2.2-alpha223-full.jar",
 			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/0.2.2-alpha223/oneconfig-1.8.9-forge-0.2.2-alpha223.module",
 			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/0.2.2-alpha223/oneconfig-1.8.9-forge-0.2.2-alpha223-full.jar.sha256",
-			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/0.2.2-alpha223/oneconfig-1.8.9-forge-0.2.2-alpha223-full.jar.md5"
+			"https://repo.polyfrost.org/releases/cc/polyfrost/oneconfig-1.8.9-forge/0.2.2-alpha223/oneconfig-1.8.9-forge-0.2.2-alpha223-full.jar.md5",
 		),
 		(
 			"https://maven.aliucord.com/snapshots",
@@ -130,13 +130,13 @@ mod tests {
 				version: Cow::Borrowed("main-20241225.011801-8"),
 				base_version: Cow::Borrowed("main-SNAPSHOT"),
 				classifier: Cow::Borrowed(""),
-				extension: Cow::Borrowed("jar")
+				extension: Cow::Borrowed("jar"),
 			},
 			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/main-SNAPSHOT/gradle-main-20241225.011801-8.jar",
 			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/main-SNAPSHOT/gradle-main-20241225.011801-8.module",
 			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/main-SNAPSHOT/gradle-main-20241225.011801-8.jar.sha256",
-			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/main-SNAPSHOT/gradle-main-20241225.011801-8.jar.md5"
-		)
+			"https://maven.aliucord.com/snapshots/com/aliucord/gradle/main-SNAPSHOT/gradle-main-20241225.011801-8.jar.md5",
+		),
 	];
 
 	#[test]
